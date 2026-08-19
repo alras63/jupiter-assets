@@ -845,8 +845,9 @@
 [class*="block-repo-"] .toast button:hover{ color: var(--ja-ink); }
 @keyframes toast-in{ from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
 @keyframes toast-out{ to { opacity: 0; transform: translateY(6px) scale(.98); } }
-[class*="block-repo-"] .reveal{ opacity: 0; transform: translateY(18px); transition: opacity .5s ease, transform .5s cubic-bezier(.22, .8, .3, 1); }
-[class*="block-repo-"] .reveal.is-visible{ opacity: 1; transform: none; }
+[class*="block-repo-"] .reveal{ transition: opacity .5s ease, transform .5s cubic-bezier(.22, .8, .3, 1); }
+[class*="block-repo-"] .has-reveal .reveal{ opacity: 0; transform: translateY(18px); }
+[class*="block-repo-"] .has-reveal .reveal.is-visible{ opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce){[class*="block-repo-"],[class*="block-repo-"] *,[class*="block-repo-"] *::before,[class*="block-repo-"] *::after{ scroll-behavior: auto !important; transition: none !important; animation: none !important;}
 [class*="block-repo-"] .reveal{ opacity: 1 !important; transform: none !important; }}
 [class*="block-repo-"] :focus-visible{ outline: 2px solid var(--ja-orange); outline-offset: 3px; }

@@ -109,6 +109,11 @@
       nodes.forEach(function (node) { node.classList.add("is-visible"); });
       return;
     }
+
+    // Прячем секции только теперь, когда есть кому их показать. В CSS они
+    // видимы по умолчанию: страница без этого файла не должна остаться пустой.
+    root.classList.add("has-reveal");
+
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
