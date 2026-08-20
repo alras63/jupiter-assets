@@ -134,6 +134,32 @@
     root.style.setProperty("--ja-scrollbar", Math.max(width, 0) + "px");
   }
 
+  /* ---------------------------------------------------------------
+     Куки-баннер портала
+     Битрикс закрепляет предупреждение о куках у нижнего края экрана
+     (position: fixed, z-index 10150) и накрывает им последнюю строку
+     подвала: 101 px на десктопе, 297 px на телефоне. Проверено кликом —
+     по ссылкам «Доставка и оплата» и «Контакты» попасть было нельзя.
+     Меряем баннер и отдаём высоту в --ja-cookie-bar, подвал резервирует
+     под неё место. Согласие не нажимаем: это выбор посетителя.
+     --------------------------------------------------------------- */
+  var cookieBarWatched = null;
+
+  function syncCookieBar() {
+    var bar = document.getElementById("bx-landing-cookies-popup-warning");
+    var height = 0;
+    if (bar) {
+      var box = bar.getBoundingClientRect();
+      // Баннер закреплён снизу; принятый сворачивается в нулевую высоту.
+      if (box.height > 0 && box.bottom > window.innerHeight - 2) height = Math.ceil(box.height);
+      if (bar !== cookieBarWatched && window.ResizeObserver) {
+        cookieBarWatched = bar;
+        new ResizeObserver(syncCookieBar).observe(bar);
+      }
+    }
+    root.style.setProperty("--ja-cookie-bar", height + "px");
+  }
+
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
@@ -154,7 +180,13 @@
     if (!ours()) return;
     applyTheme(currentTheme());
     syncScrollbar();
+    syncCookieBar();
     initReveal();
+
+    // Баннер появляется не сразу и исчезает после согласия — следим за телом.
+    if (window.MutationObserver) {
+      new MutationObserver(syncCookieBar).observe(document.body, { childList: true });
+    }
 
     document.addEventListener("click", function (event) {
       var button = event.target.closest("[data-jupiter-theme-toggle]");
@@ -167,7 +199,10 @@
       });
     });
 
-    window.addEventListener("resize", syncScrollbar);
+    window.addEventListener("resize", function () {
+      syncScrollbar();
+      syncCookieBar();
+    });
   }
 
   if (document.readyState === "loading") {
