@@ -387,6 +387,7 @@
 [class*="block-repo-"] .vehicle-card__specs{ display: flex; flex-wrap: wrap; gap: 16px; margin: 14px 0 18px; color: var(--ja-muted); font-size: 13px; }
 [class*="block-repo-"] .vehicle-card__specs span{ display: inline-flex; align-items: center; gap: 7px; }
 [class*="block-repo-"] .vehicle-card__specs svg{ color: var(--ja-faint); }
+[class*="block-repo-"] .vehicle-card__specs span:empty{ display: none; }
 [class*="block-repo-"] .price{ display: block; margin: 0 0 18px; color: var(--ja-orange); font-size: 23px; font-weight: 600; letter-spacing: -.01em; }
 [class*="block-repo-"] .product-card{
   display: grid;
