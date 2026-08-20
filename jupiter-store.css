@@ -513,6 +513,12 @@
   padding-bottom: 56px !important;
 }
 
+/* Тот же вертикальный ритм, что у наших блоков: обёртка чужого блока нашим
+   правилом из jupiter.css не задевается, и без этого форма прилипала к
+   предыдущей секции. */
+[class*="block-33-"],
+[class*="block-05-"] { margin-block-start: var(--ja-gap); }
+
 @media (max-width: 700px) {
   [class*="block-33-"] > .landing-block,
   [class*="block-05-"] > .landing-block {
