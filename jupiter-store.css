@@ -529,15 +529,32 @@
    Ширину виджета не растягиваем: его поля всё равно остаются в одной колонке,
    и правая половина панели оказывалась пустой. Вместо этого секцию заполняет
    текст рядом с формой — блок 33.12. */
-.b24-form-wrapper,
 .bitrix24forms .b24-form {
-  max-width: 640px;
+  max-width: var(--ja-container);
   margin-inline: auto;
   border: 1px solid var(--ja-line);
   border-radius: var(--ja-radius);
-  padding: clamp(22px, 3vw, 40px) clamp(20px, 3vw, 44px);
+  padding: clamp(26px, 3.4vw, 48px) clamp(20px, 3vw, 44px);
   background: var(--ja-surface);
   box-shadow: var(--ja-shadow);
+}
+
+/* Внутренняя обёртка виджета своей подложки не получает: панель здесь одна.
+   С двумя выходила карточка в карточке — тёмный прямоугольник в тёмном. */
+.b24-form .b24-form-wrapper {
+  border: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* Поля держим на читаемой ширине по центру панели: во всю ширину секции
+   строка ввода в 1100 px выглядит нелепо, а узкая панель посреди пустой
+   страницы читалась как чужой виджет. */
+.b24-form-content,
+.b24-form-header {
+  max-width: 560px;
+  margin-inline: auto;
 }
 
 /* Заголовок формы виджет центрирует; у нас вся типографика прижата влево. */
@@ -547,11 +564,11 @@
 .b24-form-header { padding: 0 0 18px !important; }
 .b24-form-header-title {
   margin: 0 0 6px;
-  color: var(--ja-ink);
+  color: var(--ja-ink) !important;
   font: 600 24px/1.25 Oswald, Inter, Arial, sans-serif;
   letter-spacing: .01em;
 }
-.b24-form-header-description { color: var(--ja-muted); font-size: 14px; line-height: 1.55; }
+.b24-form-header-description { color: var(--ja-muted) !important; font-size: 14px; line-height: 1.55; }
 
 /* Поля */
 .b24-form-content,
@@ -613,7 +630,7 @@
 .b24-form-field-agreement,
 .b24-form-field-agreement *,
 .b24-form-control-agreement {
-  color: var(--ja-faint) !important;
+  color: var(--ja-muted) !important;
   font-size: 12px !important;
   line-height: 1.55 !important;
   text-decoration: none !important;
