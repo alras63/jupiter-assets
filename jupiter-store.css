@@ -522,7 +522,11 @@
   box-shadow: var(--ja-shadow);
 }
 
-.b24-form-header { padding: 0 0 18px; text-align: left; }
+/* Заголовок формы виджет центрирует; у нас вся типографика прижата влево. */
+.b24-form-header,
+.b24-form-header-title,
+.b24-form-header-description { padding-inline: 0 !important; text-align: left !important; }
+.b24-form-header { padding: 0 0 18px !important; }
 .b24-form-header-title {
   margin: 0 0 6px;
   color: var(--ja-ink);
@@ -585,15 +589,28 @@
 }
 .b24-form-btn-container { margin-top: 6px; }
 
-/* Согласие на обработку данных: мелкий текст, но читаемый. */
+/* Согласие на обработку данных.
+   Виджет подчёркивает весь абзац и красит его как ссылку — читать тяжело.
+   Оставляем подчёркнутой только саму ссылку на согласие. */
 .b24-form-field-agreement,
+.b24-form-field-agreement *,
 .b24-form-control-agreement {
   color: var(--ja-faint) !important;
   font-size: 12px !important;
-  line-height: 1.5 !important;
+  line-height: 1.55 !important;
+  text-decoration: none !important;
 }
-.b24-form-field-agreement-link { color: var(--ja-muted) !important; text-decoration: underline; }
-.b24-form-field-agreement-link:hover { color: var(--ja-orange) !important; }
+.b24-form-field-agreement-link,
+.b24-form-field-agreement a {
+  color: var(--ja-muted) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+.b24-form-field-agreement-link:hover,
+.b24-form-field-agreement a:hover { color: var(--ja-orange) !important; }
+
+/* Флажок согласия: у виджета он синий по умолчанию. */
+.b24-form-field-agreement input[type="checkbox"] { accent-color: var(--ja-orange); }
 
 /* Ошибки */
 .b24-form-error,
