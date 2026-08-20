@@ -3,6 +3,8 @@
    Генерируется: node bitrix/build-portal-css.mjs — руками не править. */
 [class*="block-repo-"]{max-width:100%;overflow-x:clip}
 :root{
+  color-scheme: light;
+
   --ja-orange: #f4570f;
   --ja-orange-strong: #db4a06;
   --ja-orange-soft: #fcf3ed;
@@ -42,6 +44,9 @@
   --ja-bleed: calc((var(--ja-viewport) - min(var(--ja-viewport) - 48px, var(--ja-container))) / -2);
 }
 :root[data-theme="dark"]{
+  
+  color-scheme: dark;
+
   --ja-orange: #f4570f;
   --ja-orange-strong: #ff6a25;
   --ja-orange-soft: rgba(244, 87, 15, .12);

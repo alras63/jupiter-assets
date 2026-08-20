@@ -442,13 +442,30 @@
 
     select.name = param;
     select.innerHTML = "";
-    options.forEach(function (label, index) {
+    options.forEach(function (item, index) {
+      /* Пункт можно записать как «Подпись = значение»: подпись видит
+         посетитель, значение уходит в адрес. Нужно бюджету — фильтр каталога
+         ждёт число, а показывать надо «До 3 000 000 ₽». */
+      var parts = item.split("=");
+      var label = parts[0].trim();
+      var value = parts.length > 1 ? parts.slice(1).join("=").trim() : label;
+
       var option = document.createElement("option");
       // Первый пункт — «любой», он не должен уходить в запрос.
-      option.value = index === 0 ? "" : label;
+      option.value = index === 0 ? "" : value;
       option.textContent = label;
       select.appendChild(option);
     });
+
+    // Возвращаем выбор из адреса: со страницы каталога можно вернуться назад,
+    // и строка поиска должна показывать то же, что и фильтр.
+    var params = new URLSearchParams(location.search);
+    if (param && params.has(param)) {
+      var wanted = params.get(param);
+      for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === wanted) { select.value = wanted; break; }
+      }
+    }
   }
 
   function initForm(form) {
@@ -514,6 +531,11 @@
     "spec-two": ".landing-block-node-spec-two",
     "spec-three": ".landing-block-node-spec-three",
   };
+
+  /** Марка — первое слово названия: «Nissan Qashqai II» → «Nissan». */
+  function brand(card) {
+    return text(card, SOURCES.name).split(/\s+/)[0] || "";
+  }
 
   function text(card, selector) {
     var node = card.querySelector(selector);
@@ -592,6 +614,19 @@
           option.textContent = "До " + money(edge);
           select.appendChild(option);
         });
+      } else if (source === "brand") {
+        var brands = [];
+        cards.forEach(function (card) {
+          var value = brand(card);
+          if (value && brands.indexOf(value) === -1) brands.push(value);
+        });
+        brands.sort(function (a, b) { return a.localeCompare(b, "ru"); });
+        brands.forEach(function (value) {
+          var option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        });
       } else if (SOURCES[source]) {
         // Варианты — только те, что реально встречаются в карточках.
         var seen = [];
@@ -628,12 +663,59 @@
       });
     }
 
+
+    /* Выбор фильтров живёт в адресе страницы.
+       Так он переживает перезагрузку и «назад» из карточки товара, и так же
+       приезжает из строки быстрого поиска на главной: она собирает тот же
+       адрес. Ключ — источник фильтра (brand, type, price), а не порядковый
+       номер: менеджер может переставить фильтры местами. */
+    restoreFromUrl();
+    apply();
+
+    function restoreFromUrl() {
+      var params = new URLSearchParams(location.search);
+      filters.forEach(function (field) {
+        var select = field.querySelector("select");
+        var source = field.getAttribute("data-source") || "";
+        if (!select || !params.has(source)) return;
+
+        var wanted = params.get(source);
+        // Значение из адреса берём только если такой вариант есть в списке:
+        // карточки меняются, и вчерашняя ссылка может звать несуществующее.
+        for (var i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === wanted) { select.value = wanted; break; }
+        }
+      });
+
+      var sort = params.get("sort");
+      if (sortSelect && sort) sortSelect.value = sort;
+    }
+
+    function saveToUrl() {
+      var params = new URLSearchParams(location.search);
+      filters.forEach(function (field) {
+        var select = field.querySelector("select");
+        var source = field.getAttribute("data-source") || "";
+        if (!select || !source) return;
+        if (select.value) params.set(source, select.value);
+        else params.delete(source);
+      });
+
+      if (sortSelect && sortSelect.value && sortSelect.value !== "popular") params.set("sort", sortSelect.value);
+      else params.delete("sort");
+
+      var query = params.toString();
+      // replaceState, а не pushState: иначе каждый щелчок фильтра добавляет
+      // запись в историю, и кнопка «назад» перестаёт работать по-человечески.
+      history.replaceState(null, "", location.pathname + (query ? "?" + query : "") + location.hash);
+    }
     function matches(card) {
       return filters.every(function (field) {
         var select = field.querySelector("select");
         if (!select || !select.value) return true;
         var source = field.getAttribute("data-source");
         if (source === "price") return price(card) <= parseInt(select.value, 10);
+        if (source === "brand") return brand(card) === select.value;
         if (!SOURCES[source]) return true;
         return text(card, SOURCES[source]) === select.value;
       });
@@ -661,9 +743,9 @@
       if (countOut) countOut.textContent = visible.length + " " + plural(visible.length);
       if (emptyState) emptyState.hidden = visible.length > 0;
       grid.hidden = visible.length === 0;
-    }
 
-    apply();
+      saveToUrl();
+    }
   }
 
   function initAll() {
