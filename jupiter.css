@@ -386,6 +386,66 @@
 [class*="block-repo-"] .vehicle-card__specs span{ display: inline-flex; align-items: center; gap: 7px; }
 [class*="block-repo-"] .vehicle-card__specs svg{ color: var(--ja-faint); }
 [class*="block-repo-"] .price{ display: block; margin: 0 0 18px; color: var(--ja-orange); font-size: 23px; font-weight: 600; letter-spacing: -.01em; }
+[class*="block-repo-"] .product-card{
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: var(--ja-gap);
+  align-items: stretch;
+}
+[class*="block-repo-"] .product-card > *{ min-width: 0; }
+[class*="block-repo-"] .product-card__media{
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--ja-radius);
+  background: var(--ja-surface-soft);
+}
+[class*="block-repo-"] .product-card__media img{ width: 100%; height: 100%; min-height: 320px; object-fit: cover; }
+[class*="block-repo-"] .product-card__media .pill{ position: absolute; top: 16px; left: 16px; }
+[class*="block-repo-"] .product-card__body{
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ja-line);
+  border-radius: var(--ja-radius);
+  padding: 34px 38px;
+  background: var(--ja-surface);
+}
+[class*="block-repo-"] .product-card__brand{
+  margin-bottom: 12px;
+  color: var(--ja-orange);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+[class*="block-repo-"] .product-card__body h1{ margin-bottom: 12px; font-size: clamp(28px, 3vw, 40px); }
+[class*="block-repo-"] .product-card__body > p{ max-width: 460px; }
+[class*="block-repo-"] .product-card__body .price{ margin: 18px 0 22px; font-size: 30px; }
+[class*="block-repo-"] .product-card__specs{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin-bottom: 26px;
+  border: 1px solid var(--ja-line);
+  border-radius: var(--ja-radius-sm);
+  overflow: hidden;
+  background: var(--ja-line);
+}
+[class*="block-repo-"] .product-card__spec{
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 16px;
+  background: var(--ja-surface);
+}
+[class*="block-repo-"] .product-card__spec > span:first-child{ color: var(--ja-faint); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+[class*="block-repo-"] .product-card__spec > span + span{ color: var(--ja-ink); font-size: 14px; }
+[class*="block-repo-"] .product-card__actions{ display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; }
+[class*="block-repo-"] .product-card__note{ margin: 16px 0 0; color: var(--ja-faint); font-size: 12px; }
+@media (max-width: 900px){[class*="block-repo-"] .product-card{ grid-template-columns: 1fr; }
+[class*="block-repo-"] .product-card__media img{ min-height: 240px; }
+[class*="block-repo-"] .product-card__body{ padding: 26px 22px; }
+[class*="block-repo-"] .product-card__specs{ grid-template-columns: 1fr; }
+[class*="block-repo-"] .product-card__actions > .button{ width: 100%; }}
 [class*="block-repo-"] .price small{ color: var(--ja-muted); font-size: 13px; font-weight: 400; }
 [class*="block-repo-"] .vehicle-card__actions{ display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; }
 [class*="block-repo-"] .quick-search{
