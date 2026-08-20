@@ -465,8 +465,39 @@
   text-transform: uppercase;
 }
 
-/* catalog.item: квадратная плитка фото. В макете кадр шире — 16/10. */
-.catalog-section-item-slider-block { padding-top: 62.5% !important; }
+/* ------------------------------------------------------------
+   Сетка каталога
+
+   Компонент раскладывает карточки как col-12 col-sm-6 — по две в ряд на
+   любой ширине. Во всю ширину экрана карточка получается 700 px, а фотографии
+   товаров у нас 410 px по ширине: заполнить кадр им нечем, и компонент
+   подставляет размытую подложку с маленьким снимком посередине.
+
+   Поэтому: ограничиваем каталог общим контейнером сайта и ставим по четыре
+   карточки в ряд — тогда кадр около 300 px и фотография его заполняет.
+   ------------------------------------------------------------ */
+.catalog-section.container-fluid {
+  max-width: var(--ja-container);
+  margin-inline: auto;
+}
+
+@media (min-width: 992px) {
+  .catalog-section [data-entity="items-row"] > .catalog-section-item-wrapper {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+  .catalog-section [data-entity="items-row"] > .catalog-section-item-wrapper {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+/* Кадр под пропорции наших фотографий (410×231 — почти 16/9). Точное
+   совпадение важно: иначе снимок снова не заполняет бокс. */
+.catalog-section-item-slider-block { padding-top: 56.25% !important; }
 
 /* Bootstrap-утилиты, конфликтующие с нашей палитрой */
 .catalog-section .border,
