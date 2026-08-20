@@ -160,6 +160,26 @@
     root.style.setProperty("--ja-cookie-bar", height + "px");
   }
 
+  /* ---------------------------------------------------------------
+     Подсветка текущего раздела
+     В прототипе активный пункт знает роутер, а на портале страницу отдаёт
+     сервер — сверяем адрес ссылки с адресом страницы. Сравнение точное:
+     «/» — префикс любого другого адреса, и по вхождению главная
+     подсвечивалась бы на всех страницах сразу.
+     --------------------------------------------------------------- */
+  function markActiveNav() {
+    var here = location.pathname.replace(/\/+$/, "") || "/";
+    document.querySelectorAll(".main-nav a[href], .footer__links a[href]").forEach(function (link) {
+      var path;
+      try {
+        path = new URL(link.getAttribute("href"), location.href).pathname;
+      } catch (e) {
+        return;
+      }
+      link.classList.toggle("is-active", (path.replace(/\/+$/, "") || "/") === here);
+    });
+  }
+
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
@@ -181,6 +201,7 @@
     applyTheme(currentTheme());
     syncScrollbar();
     syncCookieBar();
+    markActiveNav();
     initReveal();
 
     // Баннер появляется не сразу и исчезает после согласия — следим за телом.
