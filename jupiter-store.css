@@ -600,12 +600,10 @@
   line-height: 1.55 !important;
   text-decoration: none !important;
 }
+/* Ссылкой здесь оформлен весь абзац целиком, поэтому подчёркивание с него
+   снимаем совсем: пять подчёркнутых строк подряд не читаются. */
 .b24-form-field-agreement-link,
-.b24-form-field-agreement a {
-  color: var(--ja-muted) !important;
-  text-decoration: underline !important;
-  text-underline-offset: 2px;
-}
+.b24-form-field-agreement a { color: var(--ja-muted) !important; }
 .b24-form-field-agreement-link:hover,
 .b24-form-field-agreement a:hover { color: var(--ja-orange) !important; }
 
