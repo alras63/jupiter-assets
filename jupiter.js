@@ -184,6 +184,92 @@
 })();
 
 
+/* ==== site-header.js ==== */
+/**
+ * Шапка сайта: меню на узких экранах и подсветка текущего пункта.
+ *
+ * Кнопка «Меню» показывает и прячет .main-nav — на широких экранах она скрыта
+ * стилями и в разметке остаётся.
+ *
+ * Подсветка вычисляется от адреса страницы, а не задаётся в разметке: иначе
+ * редактору пришлось бы отмечать активный пункт на каждой странице руками,
+ * а блок один на весь сайт.
+ */
+(function () {
+  "use strict";
+
+  function initHeader(header) {
+    if (header.dataset.headerReady === "1") return;
+    header.dataset.headerReady = "1";
+
+    var nav = header.querySelector(".main-nav");
+    var toggle = header.querySelector("[data-jupiter-menu-toggle]");
+
+    if (nav && toggle) {
+      toggle.addEventListener("click", function () {
+        var open = !nav.classList.contains("is-open");
+        setOpen(open);
+      });
+
+      // Клик по пункту закрывает меню: иначе на телефоне оно остаётся поверх
+      // страницы, на которую только что перешли.
+      nav.addEventListener("click", function (event) {
+        if (event.target.closest("a")) setOpen(false);
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") setOpen(false);
+      });
+    }
+
+    function setOpen(open) {
+      nav.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Закрыть меню" : "Открыть меню");
+      toggle.setAttribute("data-tip", open ? "Закрыть меню" : "Меню");
+      toggle.querySelectorAll("[data-icon]").forEach(function (icon) {
+        icon.hidden = icon.getAttribute("data-icon") !== (open ? "close" : "menu");
+      });
+    }
+
+    markActive(header);
+  }
+
+  /** Отмечает пункт, ведущий на текущую страницу. */
+  function markActive(header) {
+    var here = location.pathname.replace(/\/+$/, "") || "/";
+
+    header.querySelectorAll(".main-nav a").forEach(function (link) {
+      var href = link.getAttribute("href") || "";
+      if (!href || href.charAt(0) === "#") return;
+
+      var path;
+      try { path = new URL(href, location.href).pathname.replace(/\/+$/, "") || "/"; }
+      catch (e) { return; }
+
+      // Точное совпадение либо вложенный раздел: /katalog/item/… тоже «Каталог».
+      var active = path === here || (path !== "/" && here.indexOf(path + "/") === 0);
+      link.classList.toggle("is-active", active);
+    });
+  }
+
+  function initAll() {
+    document.querySelectorAll(".jupiter-header").forEach(initHeader);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+  } else {
+    initAll();
+  }
+
+  if (window.BX && window.BX.addCustomEvent) {
+    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
+    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
+  }
+})();
+
+
 /* ==== hero-slider.js ==== */
 /**
  * Слайдер первого экрана для блока jupiter.hero-slider.
@@ -398,190 +484,6 @@
 })();
 
 
-/* ==== calculator.js ==== */
-/**
- * Кредитный калькулятор.
- *
- * Границы сумм, срок и ставка задаются data-атрибутами блока, поэтому
- * менеджер меняет их в редакторе, не трогая код. Формула — аннуитет.
- */
-(function () {
-  "use strict";
-
-  function money(value) {
-    return Math.round(value).toLocaleString("ru-RU") + " ₽";
-  }
-
-  function termLabel(years) {
-    var mod10 = years % 10;
-    var mod100 = years % 100;
-    if (mod10 === 1 && mod100 !== 11) return years + " год";
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return years + " года";
-    return years + " лет";
-  }
-
-  function num(root, name, fallback) {
-    var raw = parseFloat(root.getAttribute(name));
-    return isNaN(raw) ? fallback : raw;
-  }
-
-  function initCalc(root) {
-    if (root.dataset.calcReady === "1") return;
-    root.dataset.calcReady = "1";
-
-    var priceInput = root.querySelector("[data-calc-price]");
-    var downInput = root.querySelector("[data-calc-down]");
-    var termInput = root.querySelector("[data-calc-term]");
-    if (!priceInput || !downInput || !termInput) return;
-
-    var priceOut = root.querySelector("[data-calc-price-out]");
-    var downOut = root.querySelector("[data-calc-down-out]");
-    var termOut = root.querySelector("[data-calc-term-out]");
-    var monthlyOut = root.querySelector("[data-calc-monthly]");
-    var monthlyTitle = root.querySelector("[data-calc-monthly-title]");
-
-    var priceMin = num(root, "data-price-min", 1000000);
-    var priceMax = num(root, "data-price-max", 6000000);
-    var rate = num(root, "data-rate", 16) / 100;
-
-    priceInput.min = priceMin;
-    priceInput.max = priceMax;
-    priceInput.step = 50000;
-    priceInput.value = num(root, "data-price-start", 2500000);
-
-    downInput.min = 0;
-    // max обязательно до value: браузер обрезает значение по текущему максимуму,
-    // а у range он по умолчанию 100 — иначе взнос молча схлопнется в 100 ₽.
-    downInput.max = priceMax;
-    downInput.step = 50000;
-    downInput.value = num(root, "data-down-start", 750000);
-
-    termInput.min = num(root, "data-term-min", 1);
-    termInput.max = num(root, "data-term-max", 7);
-    termInput.step = 1;
-    termInput.value = num(root, "data-term-start", 5);
-
-    function paintTrack(input) {
-      var min = parseFloat(input.min);
-      var max = parseFloat(input.max);
-      var filled = max > min ? ((parseFloat(input.value) - min) / (max - min)) * 100 : 0;
-      input.style.background =
-        "linear-gradient(90deg, var(--ja-orange) " + filled + "%, var(--ja-line) " + filled + "%)";
-    }
-
-    function render() {
-      var price = parseFloat(priceInput.value);
-      // Взнос не может превышать стоимость — двигаем верхнюю границу следом.
-      downInput.max = price;
-      if (parseFloat(downInput.value) > price) downInput.value = price;
-
-      var down = parseFloat(downInput.value);
-      var years = parseFloat(termInput.value);
-      var body = Math.max(price - down, 0);
-      var monthlyRate = rate / 12;
-      var months = years * 12;
-      var monthly = body
-        ? (body * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months))
-        : 0;
-
-      if (priceOut) priceOut.textContent = money(price);
-      if (downOut) downOut.textContent = money(down);
-      if (termOut) termOut.textContent = termLabel(years);
-      if (monthlyOut) monthlyOut.textContent = money(monthly);
-      if (monthlyTitle) monthlyTitle.textContent = money(monthly);
-
-      [priceInput, downInput, termInput].forEach(paintTrack);
-    }
-
-    [priceInput, downInput, termInput].forEach(function (input) {
-      input.addEventListener("input", render);
-    });
-    render();
-  }
-
-  function initAll() {
-    document.querySelectorAll(".jupiter-calc").forEach(initCalc);
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initAll);
-  } else {
-    initAll();
-  }
-
-  if (window.BX && window.BX.addCustomEvent) {
-    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
-    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
-  }
-})();
-
-
-/* ==== faq.js ==== */
-/**
- * Аккордеон «Частые вопросы».
- *
- * Разметка содержит и вопрос, и ответ в открытом виде — это важно: поисковики
- * и редактор Битрикс должны видеть текст ответа. Скрытие делает скрипт.
- * По умолчанию раскрыт первый пункт, если у блока задан data-open="first".
- */
-(function () {
-  "use strict";
-
-  function initAccordion(root) {
-    if (root.dataset.accordionReady === "1") return;
-    root.dataset.accordionReady = "1";
-
-    var items = Array.prototype.slice.call(root.querySelectorAll(".accordion__item"));
-    if (!items.length) return;
-
-    var openFirst = root.getAttribute("data-open") === "first";
-
-    items.forEach(function (item, index) {
-      var button = item.querySelector("button");
-      var answer = item.querySelector("p");
-      if (!button || !answer) return;
-
-      var id = "jupiter-faq-" + Math.random().toString(36).slice(2, 8);
-      answer.id = id;
-      button.setAttribute("aria-controls", id);
-
-      setOpen(item, openFirst && index === 0);
-
-      button.addEventListener("click", function () {
-        var willOpen = !item.classList.contains("is-open");
-        // Одновременно открыт один пункт — так список не разъезжается.
-        items.forEach(function (other) { setOpen(other, false); });
-        setOpen(item, willOpen);
-      });
-    });
-
-    function setOpen(item, open) {
-      var button = item.querySelector("button");
-      var answer = item.querySelector("p");
-      if (!button || !answer) return;
-      item.classList.toggle("is-open", open);
-      button.setAttribute("aria-expanded", String(open));
-      answer.hidden = !open;
-    }
-  }
-
-  function initAll() {
-    document.querySelectorAll(".jupiter-accordion").forEach(initAccordion);
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initAll);
-  } else {
-    initAll();
-  }
-
-  if (window.BX && window.BX.addCustomEvent) {
-    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
-    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
-  }
-})();
-
-
 /* ==== catalog.js ==== */
 /**
  * Каталог: фильтрация и сортировка карточек на клиенте.
@@ -759,6 +661,190 @@
 
   function initAll() {
     document.querySelectorAll(".jupiter-catalog").forEach(initCatalog);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+  } else {
+    initAll();
+  }
+
+  if (window.BX && window.BX.addCustomEvent) {
+    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
+    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
+  }
+})();
+
+
+/* ==== calculator.js ==== */
+/**
+ * Кредитный калькулятор.
+ *
+ * Границы сумм, срок и ставка задаются data-атрибутами блока, поэтому
+ * менеджер меняет их в редакторе, не трогая код. Формула — аннуитет.
+ */
+(function () {
+  "use strict";
+
+  function money(value) {
+    return Math.round(value).toLocaleString("ru-RU") + " ₽";
+  }
+
+  function termLabel(years) {
+    var mod10 = years % 10;
+    var mod100 = years % 100;
+    if (mod10 === 1 && mod100 !== 11) return years + " год";
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return years + " года";
+    return years + " лет";
+  }
+
+  function num(root, name, fallback) {
+    var raw = parseFloat(root.getAttribute(name));
+    return isNaN(raw) ? fallback : raw;
+  }
+
+  function initCalc(root) {
+    if (root.dataset.calcReady === "1") return;
+    root.dataset.calcReady = "1";
+
+    var priceInput = root.querySelector("[data-calc-price]");
+    var downInput = root.querySelector("[data-calc-down]");
+    var termInput = root.querySelector("[data-calc-term]");
+    if (!priceInput || !downInput || !termInput) return;
+
+    var priceOut = root.querySelector("[data-calc-price-out]");
+    var downOut = root.querySelector("[data-calc-down-out]");
+    var termOut = root.querySelector("[data-calc-term-out]");
+    var monthlyOut = root.querySelector("[data-calc-monthly]");
+    var monthlyTitle = root.querySelector("[data-calc-monthly-title]");
+
+    var priceMin = num(root, "data-price-min", 1000000);
+    var priceMax = num(root, "data-price-max", 6000000);
+    var rate = num(root, "data-rate", 16) / 100;
+
+    priceInput.min = priceMin;
+    priceInput.max = priceMax;
+    priceInput.step = 50000;
+    priceInput.value = num(root, "data-price-start", 2500000);
+
+    downInput.min = 0;
+    // max обязательно до value: браузер обрезает значение по текущему максимуму,
+    // а у range он по умолчанию 100 — иначе взнос молча схлопнется в 100 ₽.
+    downInput.max = priceMax;
+    downInput.step = 50000;
+    downInput.value = num(root, "data-down-start", 750000);
+
+    termInput.min = num(root, "data-term-min", 1);
+    termInput.max = num(root, "data-term-max", 7);
+    termInput.step = 1;
+    termInput.value = num(root, "data-term-start", 5);
+
+    function paintTrack(input) {
+      var min = parseFloat(input.min);
+      var max = parseFloat(input.max);
+      var filled = max > min ? ((parseFloat(input.value) - min) / (max - min)) * 100 : 0;
+      input.style.background =
+        "linear-gradient(90deg, var(--ja-orange) " + filled + "%, var(--ja-line) " + filled + "%)";
+    }
+
+    function render() {
+      var price = parseFloat(priceInput.value);
+      // Взнос не может превышать стоимость — двигаем верхнюю границу следом.
+      downInput.max = price;
+      if (parseFloat(downInput.value) > price) downInput.value = price;
+
+      var down = parseFloat(downInput.value);
+      var years = parseFloat(termInput.value);
+      var body = Math.max(price - down, 0);
+      var monthlyRate = rate / 12;
+      var months = years * 12;
+      var monthly = body
+        ? (body * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months))
+        : 0;
+
+      if (priceOut) priceOut.textContent = money(price);
+      if (downOut) downOut.textContent = money(down);
+      if (termOut) termOut.textContent = termLabel(years);
+      if (monthlyOut) monthlyOut.textContent = money(monthly);
+      if (monthlyTitle) monthlyTitle.textContent = money(monthly);
+
+      [priceInput, downInput, termInput].forEach(paintTrack);
+    }
+
+    [priceInput, downInput, termInput].forEach(function (input) {
+      input.addEventListener("input", render);
+    });
+    render();
+  }
+
+  function initAll() {
+    document.querySelectorAll(".jupiter-calc").forEach(initCalc);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+  } else {
+    initAll();
+  }
+
+  if (window.BX && window.BX.addCustomEvent) {
+    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
+    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
+  }
+})();
+
+
+/* ==== faq.js ==== */
+/**
+ * Аккордеон «Частые вопросы».
+ *
+ * Разметка содержит и вопрос, и ответ в открытом виде — это важно: поисковики
+ * и редактор Битрикс должны видеть текст ответа. Скрытие делает скрипт.
+ * По умолчанию раскрыт первый пункт, если у блока задан data-open="first".
+ */
+(function () {
+  "use strict";
+
+  function initAccordion(root) {
+    if (root.dataset.accordionReady === "1") return;
+    root.dataset.accordionReady = "1";
+
+    var items = Array.prototype.slice.call(root.querySelectorAll(".accordion__item"));
+    if (!items.length) return;
+
+    var openFirst = root.getAttribute("data-open") === "first";
+
+    items.forEach(function (item, index) {
+      var button = item.querySelector("button");
+      var answer = item.querySelector("p");
+      if (!button || !answer) return;
+
+      var id = "jupiter-faq-" + Math.random().toString(36).slice(2, 8);
+      answer.id = id;
+      button.setAttribute("aria-controls", id);
+
+      setOpen(item, openFirst && index === 0);
+
+      button.addEventListener("click", function () {
+        var willOpen = !item.classList.contains("is-open");
+        // Одновременно открыт один пункт — так список не разъезжается.
+        items.forEach(function (other) { setOpen(other, false); });
+        setOpen(item, willOpen);
+      });
+    });
+
+    function setOpen(item, open) {
+      var button = item.querySelector("button");
+      var answer = item.querySelector("p");
+      if (!button || !answer) return;
+      item.classList.toggle("is-open", open);
+      button.setAttribute("aria-expanded", String(open));
+      answer.hidden = !open;
+    }
+  }
+
+  function initAll() {
+    document.querySelectorAll(".jupiter-accordion").forEach(initAccordion);
   }
 
   if (document.readyState === "loading") {
