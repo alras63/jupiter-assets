@@ -1,5 +1,5 @@
 /* ============================================================
-   Оформление штатных блоков магазина Битрикс24 под дизайн-систему
+   Оформление штатных блоков Битрикс24 под дизайн-систему
    «Юпитер Авто».
 
    Подключается ПОСЛЕ jupiter.css — использует его токены, поэтому
@@ -502,11 +502,109 @@
 /* ------------------------------------------------------------
    Штатный блок CRM-формы
 
-   У него собственные отступы в 100 px сверху и снизу — вдвое больше, чем у
-   наших секций, и в ленте страницы форма проваливается в пустоту. Приводим
-   к нашему ритму. Саму форму не трогаем: её оформление задаётся атрибутом
-   data-b24form-design в разметке блока.
+   Своей формы мы не делаем: заявка должна уходить в CRM с UTM-метками.
+   Цвета формы задаются штатно, атрибутом data-b24form-design, — здесь только
+   то, чего в нём нет: размеры, скругления, шрифт, отступы и подложка.
+
+   Разметку формы рисует виджет Битрикса в обычном DOM, классы .b24-form-*.
+   Селекторы сняты с живой страницы.
    ------------------------------------------------------------ */
+
+/* Подложка: форма читается как наша панель, а не как вставка со стороны. */
+.b24-form-wrapper,
+.bitrix24forms .b24-form {
+  max-width: 640px;
+  margin-inline: auto;
+  border: 1px solid var(--ja-line);
+  border-radius: var(--ja-radius);
+  padding: clamp(20px, 3vw, 34px);
+  background: var(--ja-surface);
+  box-shadow: var(--ja-shadow);
+}
+
+.b24-form-header { padding: 0 0 18px; text-align: left; }
+.b24-form-header-title {
+  margin: 0 0 6px;
+  color: var(--ja-ink);
+  font: 600 24px/1.25 Oswald, Inter, Arial, sans-serif;
+  letter-spacing: .01em;
+}
+.b24-form-header-description { color: var(--ja-muted); font-size: 14px; line-height: 1.55; }
+
+/* Поля */
+.b24-form-content,
+.b24-form-padding-side { padding-inline: 0 !important; }
+.b24-form-field { margin-bottom: 14px; }
+
+.b24-form-control-container .b24-form-control,
+.bitrix24forms input.b24-form-control,
+.bitrix24forms textarea.b24-form-control {
+  min-height: 46px;
+  border: 1px solid var(--ja-line) !important;
+  border-radius: var(--ja-radius-sm) !important;
+  padding: 11px 14px !important;
+  background: var(--ja-surface-elevated) !important;
+  color: var(--ja-ink) !important;
+  font: 400 15px/1.45 Inter, Arial, sans-serif !important;
+  transition: border-color .2s, box-shadow .2s;
+}
+.b24-form-control:focus,
+.b24-form-control:focus-visible {
+  border-color: var(--ja-orange) !important;
+  box-shadow: 0 0 0 3px var(--ja-orange-soft) !important;
+  outline: none !important;
+}
+.b24-form-control::placeholder { color: var(--ja-faint) !important; }
+
+/* Подпись поля: у виджета она наезжает на рамку, как «плавающий» лейбл. */
+.b24-form-control-label {
+  color: var(--ja-muted) !important;
+  font: 500 12px/1.2 Inter, Arial, sans-serif !important;
+  letter-spacing: .01em;
+}
+.b24-form-control-desc { color: var(--ja-faint) !important; font-size: 12px !important; }
+
+/* Кнопка — как наша .button */
+.b24-form-btn,
+.bitrix24forms button.b24-form-btn {
+  min-height: 46px !important;
+  border: 1px solid var(--ja-orange) !important;
+  border-radius: var(--ja-radius-btn) !important;
+  padding: 12px 26px !important;
+  background: var(--ja-orange) !important;
+  color: #fff !important;
+  font: 600 12px/1.2 Inter, Arial, sans-serif !important;
+  letter-spacing: .05em !important;
+  text-transform: uppercase !important;
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.b24-form-btn:hover {
+  background: var(--ja-orange-strong) !important;
+  border-color: var(--ja-orange-strong) !important;
+  transform: translateY(-1px);
+}
+.b24-form-btn-container { margin-top: 6px; }
+
+/* Согласие на обработку данных: мелкий текст, но читаемый. */
+.b24-form-field-agreement,
+.b24-form-control-agreement {
+  color: var(--ja-faint) !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+.b24-form-field-agreement-link { color: var(--ja-muted) !important; text-decoration: underline; }
+.b24-form-field-agreement-link:hover { color: var(--ja-orange) !important; }
+
+/* Ошибки */
+.b24-form-error,
+.b24-form-control-alert-message { color: #c8452b !important; font-size: 12px !important; }
+
+/* Отметка «Заряжено Битрикс24» — оставляем, но приглушаем: убирать её нельзя,
+   это чужой продукт и его знак. */
+.b24-form-sign { opacity: .5; transform: scale(.92); transform-origin: left bottom; }
+.b24-form-sign:hover { opacity: .8; }
+
+/* Отступы блока */
 [class*="block-33-"] > .landing-block,
 [class*="block-05-"] > .landing-block {
   padding-top: 56px !important;
