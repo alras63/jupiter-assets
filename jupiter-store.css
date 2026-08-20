@@ -499,6 +499,28 @@
    совпадение важно: иначе снимок снова не заполняет бокс. */
 .catalog-section-item-slider-block { padding-top: 56.25% !important; }
 
+/* ------------------------------------------------------------
+   Штатный блок CRM-формы
+
+   У него собственные отступы в 100 px сверху и снизу — вдвое больше, чем у
+   наших секций, и в ленте страницы форма проваливается в пустоту. Приводим
+   к нашему ритму. Саму форму не трогаем: её оформление задаётся атрибутом
+   data-b24form-design в разметке блока.
+   ------------------------------------------------------------ */
+[class*="block-33-"] > .landing-block,
+[class*="block-05-"] > .landing-block {
+  padding-top: 56px !important;
+  padding-bottom: 56px !important;
+}
+
+@media (max-width: 700px) {
+  [class*="block-33-"] > .landing-block,
+  [class*="block-05-"] > .landing-block {
+    padding-top: 36px !important;
+    padding-bottom: 36px !important;
+  }
+}
+
 /* Bootstrap-утилиты, конфликтующие с нашей палитрой */
 .catalog-section .border,
 .checkout-container .border { border-color: var(--ja-line) !important; }
