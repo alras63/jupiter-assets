@@ -295,6 +295,7 @@
   justify-content: center;
   padding-bottom: calc(var(--ja-controls-gap) + var(--ja-controls-h) + 18px);
 }
+[class*="block-repo-"] .hero-slider__track{ grid-area: 1 / 1; display: grid; }
 [class*="block-repo-"] .hero-slide{ grid-area: 1 / 1; opacity: 0; transition: opacity .5s ease; pointer-events: none; }
 [class*="block-repo-"] .hero-slide.is-active{ opacity: 1; pointer-events: auto; }
 [class*="block-repo-"] .hero-slide__brand{
