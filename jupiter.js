@@ -238,17 +238,24 @@
   /** Отмечает пункт, ведущий на текущую страницу. */
   function markActive(header) {
     var here = location.pathname.replace(/\/+$/, "") || "/";
+    // Подсвечиваем только первый подходящий пункт: в меню два пункта ведут
+    // в каталог («Модели» и «Авто в наличии»), и подсвечивались оба сразу.
+    var marked = false;
 
     header.querySelectorAll(".main-nav a").forEach(function (link) {
       var href = link.getAttribute("href") || "";
-      if (!href || href.charAt(0) === "#") return;
+      var active = false;
 
-      var path;
-      try { path = new URL(href, location.href).pathname.replace(/\/+$/, "") || "/"; }
-      catch (e) { return; }
+      if (href && href.charAt(0) !== "#" && !marked) {
+        var path;
+        try { path = new URL(href, location.href).pathname.replace(/\/+$/, "") || "/"; }
+        catch (e) { path = null; }
 
-      // Точное совпадение либо вложенный раздел: /katalog/item/… тоже «Каталог».
-      var active = path === here || (path !== "/" && here.indexOf(path + "/") === 0);
+        // Точное совпадение либо вложенный раздел: /katalog/item/… тоже «Каталог».
+        if (path) active = path === here || (path !== "/" && here.indexOf(path + "/") === 0);
+        if (active) marked = true;
+      }
+
       link.classList.toggle("is-active", active);
     });
   }
