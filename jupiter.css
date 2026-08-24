@@ -155,6 +155,7 @@
 [class*="block-repo-"] h1,[class*="block-repo-"] h2,[class*="block-repo-"] h3,[class*="block-repo-"] h4,[class*="block-repo-"] p{ margin-top: 0; }
 [class*="block-repo-"] h1,[class*="block-repo-"] h2{ text-wrap: balance; }
 [class*="block-repo-"] h1 > span,[class*="block-repo-"] h1 > em{ display: block; text-wrap: balance; }
+[class*="block-repo-"] h1 > br{ display: none; }
 [class*="block-repo-"] .display,[class*="block-repo-"] h1{
   display: block;
   margin-bottom: 20px;
