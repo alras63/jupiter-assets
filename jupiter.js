@@ -830,6 +830,16 @@
  *
  * Границы сумм, срок и ставка задаются data-атрибутами блока, поэтому
  * менеджер меняет их в редакторе, не трогая код. Формула — аннуитет.
+ *
+ * Взнос считается долей от цены, а не отдельной суммой в рублях. Так было
+ * раньше, и получалось вот что: взнос можно было увести в ноль (кредит на
+ * полную стоимость — таких программ у автокредита нет) и, наоборот, поднять
+ * до самой цены, после чего платёж показывался «0 ₽». Теперь доля живёт в
+ * границах 10–90%, а при движении цены сумма взноса пересчитывается сама и
+ * остаётся той же долей.
+ *
+ * Показываем не только платёж, но и сумму кредита с переплатой: без них
+ * человек видит красивое число в месяц и не видит, во что оно обходится.
  */
 (function () {
   "use strict";
@@ -865,22 +875,27 @@
     var termOut = root.querySelector("[data-calc-term-out]");
     var monthlyOut = root.querySelector("[data-calc-monthly]");
     var monthlyTitle = root.querySelector("[data-calc-monthly-title]");
+    var bodyOut = root.querySelector("[data-calc-body]");
+    var overOut = root.querySelector("[data-calc-over]");
 
     var priceMin = num(root, "data-price-min", 1000000);
     var priceMax = num(root, "data-price-max", 6000000);
     var rate = num(root, "data-rate", 16) / 100;
+    var downMin = num(root, "data-down-min", 10);
+    var downMax = num(root, "data-down-max", 90);
 
     priceInput.min = priceMin;
     priceInput.max = priceMax;
     priceInput.step = 50000;
     priceInput.value = num(root, "data-price-start", 2500000);
 
-    downInput.min = 0;
-    // max обязательно до value: браузер обрезает значение по текущему максимуму,
-    // а у range он по умолчанию 100 — иначе взнос молча схлопнется в 100 ₽.
-    downInput.max = priceMax;
-    downInput.step = 50000;
-    downInput.value = num(root, "data-down-start", 750000);
+    /* Ползунок взноса ходит в процентах, а рубли считаются от цены.
+       Раньше он ходил в рублях, и его максимум приходилось двигать вслед за
+       ценой; при уменьшении цены значение молча обрезалось. */
+    downInput.min = downMin;
+    downInput.max = downMax;
+    downInput.step = 1;
+    downInput.value = num(root, "data-down-start", 20);
 
     termInput.min = num(root, "data-term-min", 1);
     termInput.max = num(root, "data-term-max", 7);
@@ -897,24 +912,27 @@
 
     function render() {
       var price = parseFloat(priceInput.value);
-      // Взнос не может превышать стоимость — двигаем верхнюю границу следом.
-      downInput.max = price;
-      if (parseFloat(downInput.value) > price) downInput.value = price;
-
-      var down = parseFloat(downInput.value);
+      var share = parseFloat(downInput.value);
+      var down = Math.round((price * share) / 100);
       var years = parseFloat(termInput.value);
       var body = Math.max(price - down, 0);
       var monthlyRate = rate / 12;
       var months = years * 12;
-      var monthly = body
-        ? (body * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months))
-        : 0;
+      /* Аннуитет. Ставка 0 — вырожденный случай: формула делится на ноль,
+         а платёж при нулевой ставке это просто тело, делённое на срок. */
+      var monthly = !body
+        ? 0
+        : monthlyRate
+          ? (body * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months))
+          : body / months;
 
       if (priceOut) priceOut.textContent = money(price);
-      if (downOut) downOut.textContent = money(down);
+      if (downOut) downOut.textContent = money(down) + " · " + Math.round(share) + "%";
       if (termOut) termOut.textContent = termLabel(years);
       if (monthlyOut) monthlyOut.textContent = money(monthly);
       if (monthlyTitle) monthlyTitle.textContent = money(monthly);
+      if (bodyOut) bodyOut.textContent = money(body);
+      if (overOut) overOut.textContent = money(Math.max(monthly * months - body, 0));
 
       [priceInput, downInput, termInput].forEach(paintTrack);
     }
@@ -993,6 +1011,54 @@
 
   function initAll() {
     document.querySelectorAll(".jupiter-accordion").forEach(initAccordion);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+  } else {
+    initAll();
+  }
+
+  if (window.BX && window.BX.addCustomEvent) {
+    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
+    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
+  }
+})();
+
+
+/* ==== map.js ==== */
+/**
+ * Карта проезда.
+ *
+ * Яндекс отдаёт карту в iframe со своими скриптами и шрифтами. На странице
+ * контактов человек чаще всего пришёл прочитать адрес и позвонить, поэтому
+ * до нажатия карты нет: подложка с кнопкой, а iframe появляется по клику.
+ */
+(function () {
+  "use strict";
+
+  function initMap(frame) {
+    if (frame.dataset.mapReady === "1") return;
+    var src = frame.getAttribute("data-map-embed");
+    var button = frame.querySelector("[data-map-open]");
+    if (!src || !button) return;
+    frame.dataset.mapReady = "1";
+
+    button.addEventListener("click", function () {
+      var iframe = document.createElement("iframe");
+      iframe.src = src;
+      iframe.title = "Карта проезда";
+      iframe.loading = "lazy";
+      iframe.setAttribute("allowfullscreen", "");
+      iframe.setAttribute("referrerpolicy", "no-referrer-when-downgrade");
+      frame.appendChild(iframe);
+      frame.classList.add("is-loaded");
+      button.remove();
+    });
+  }
+
+  function initAll() {
+    document.querySelectorAll(".jupiter-map [data-map-embed]").forEach(initMap);
   }
 
   if (document.readyState === "loading") {
