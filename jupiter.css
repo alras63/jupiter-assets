@@ -895,7 +895,7 @@
 [class*="block-repo-"] .hero__actions .button{ width: 100%; }
 [class*="block-repo-"] .hero__proof{ gap: 9px; margin-top: 16px; }
 [class*="block-repo-"] .hero__proof > span{ font-size: 12.5px; }
-[class*="block-repo-"] .hero__media{ min-height: 180px; }
+[class*="block-repo-"] .hero__media{ min-height: 0; height: 170px; }
 [class*="block-repo-"] .hero-slider__controls{ padding-block: 10px; }
 [class*="block-repo-"] .quick-search,[class*="block-repo-"] .calc-bar,[class*="block-repo-"] .filter-bar{ grid-template-columns: 1fr; }
 [class*="block-repo-"] .vehicle-grid,[class*="block-repo-"] .showcase,[class*="block-repo-"] .timeline,[class*="block-repo-"] .process,[class*="block-repo-"] .info-panels,[class*="block-repo-"] .config-grid{ grid-template-columns: 1fr; }
