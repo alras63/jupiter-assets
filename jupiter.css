@@ -886,10 +886,17 @@
 [class*="block-repo-"] .panel{ padding: 22px 18px; }
 [class*="block-repo-"] .header__actions{ margin-left: auto; gap: 8px; }
 [class*="block-repo-"] .logo__mark{ width: 34px; }
-[class*="block-repo-"] .hero__copy{ padding: 34px 0 26px; }
-[class*="block-repo-"] .hero__actions{ gap: 12px; }
+[class*="block-repo-"] .hero__copy{ padding: 22px 0 18px; }
+[class*="block-repo-"] .hero--slider .hero__copy{ padding-bottom: 12px; }
+[class*="block-repo-"] h1{ font-size: clamp(30px, 8.2vw, 38px); margin-bottom: 14px; }
+[class*="block-repo-"] .hero-slide__brand{ margin-bottom: 8px; }
+[class*="block-repo-"] .hero__copy > p{ margin: 0 0 18px; font-size: 15px; line-height: 1.5; }
+[class*="block-repo-"] .hero__actions{ gap: 10px; margin-top: 18px; }
 [class*="block-repo-"] .hero__actions .button{ width: 100%; }
-[class*="block-repo-"] .hero__media{ min-height: 230px; }
+[class*="block-repo-"] .hero__proof{ gap: 9px; margin-top: 16px; }
+[class*="block-repo-"] .hero__proof > span{ font-size: 12.5px; }
+[class*="block-repo-"] .hero__media{ min-height: 180px; }
+[class*="block-repo-"] .hero-slider__controls{ padding-block: 10px; }
 [class*="block-repo-"] .quick-search,[class*="block-repo-"] .calc-bar,[class*="block-repo-"] .filter-bar{ grid-template-columns: 1fr; }
 [class*="block-repo-"] .vehicle-grid,[class*="block-repo-"] .showcase,[class*="block-repo-"] .timeline,[class*="block-repo-"] .process,[class*="block-repo-"] .info-panels,[class*="block-repo-"] .config-grid{ grid-template-columns: 1fr; }
 [class*="block-repo-"] .vehicle-card--row{ flex-direction: column; }
