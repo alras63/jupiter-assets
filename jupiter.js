@@ -824,6 +824,61 @@
 })();
 
 
+/* ==== gallery.js ==== */
+/**
+ * Галерея в карточке автомобиля.
+ *
+ * Нажатие на миниатюру меняет крупный снимок. Полоса миниатюр показывается
+ * только когда снимков больше одного — иначе под фотографией висела бы
+ * строка с её же копией.
+ *
+ * Адрес снимка берём из самой миниатюры: подменять src у крупного снимка
+ * достаточно, второй список путей заводить незачем.
+ */
+(function () {
+  "use strict";
+
+  function initGallery(root) {
+    if (root.dataset.galleryReady === "1") return;
+
+    var main = root.querySelector(".landing-block-node-photo");
+    var thumbs = [].slice.call(root.querySelectorAll(".landing-block-card-shot"));
+    if (!main || thumbs.length < 2) {
+      // Один снимок — полосу прячем и выходим: показывать нечего.
+      if (thumbs.length < 2) root.classList.add("is-single");
+      root.dataset.galleryReady = "1";
+      return;
+    }
+    root.dataset.galleryReady = "1";
+
+    thumbs.forEach(function (thumb) {
+      thumb.addEventListener("click", function () {
+        var shot = thumb.querySelector("img");
+        if (!shot) return;
+        main.src = shot.currentSrc || shot.src;
+        main.alt = shot.alt || main.alt;
+        thumbs.forEach(function (other) { other.classList.toggle("is-active", other === thumb); });
+      });
+    });
+  }
+
+  function initAll() {
+    document.querySelectorAll(".jupiter-gallery").forEach(initGallery);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAll);
+  } else {
+    initAll();
+  }
+
+  if (window.BX && window.BX.addCustomEvent) {
+    window.BX.addCustomEvent("BX.Landing.Block:init", initAll);
+    window.BX.addCustomEvent("BX.Landing.Block:afterUpdateContent", initAll);
+  }
+})();
+
+
 /* ==== calculator.js ==== */
 /**
  * Кредитный калькулятор.
