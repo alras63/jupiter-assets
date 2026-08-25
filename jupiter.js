@@ -1085,9 +1085,13 @@
 /**
  * Карта проезда.
  *
- * Яндекс отдаёт карту в iframe со своими скриптами и шрифтами. На странице
- * контактов человек чаще всего пришёл прочитать адрес и позвонить, поэтому
- * до нажатия карты нет: подложка с кнопкой, а iframe появляется по клику.
+ * Карта показывается сразу, без нажатия: адрес без карты — это адрес, который
+ * надо копировать в другое приложение.
+ *
+ * iframe создаётся скриптом, а не лежит в разметке блока: содержимое блока
+ * проходит проверку безопасности портала, и полагаться на то, что она
+ * пропустит чужой фрейм, не стоит. Скрипту это не мешает — он же и ставит
+ * loading="lazy", поэтому карта не задерживает остальную страницу.
  */
 (function () {
   "use strict";
@@ -1095,21 +1099,21 @@
   function initMap(frame) {
     if (frame.dataset.mapReady === "1") return;
     var src = frame.getAttribute("data-map-embed");
-    var button = frame.querySelector("[data-map-open]");
-    if (!src || !button) return;
+    if (!src) return;
     frame.dataset.mapReady = "1";
 
-    button.addEventListener("click", function () {
-      var iframe = document.createElement("iframe");
-      iframe.src = src;
-      iframe.title = "Карта проезда";
-      iframe.loading = "lazy";
-      iframe.setAttribute("allowfullscreen", "");
-      iframe.setAttribute("referrerpolicy", "no-referrer-when-downgrade");
-      frame.appendChild(iframe);
-      frame.classList.add("is-loaded");
-      button.remove();
-    });
+    var iframe = document.createElement("iframe");
+    iframe.src = src;
+    iframe.title = "Карта проезда";
+    iframe.loading = "lazy";
+    iframe.setAttribute("allowfullscreen", "");
+    iframe.setAttribute("referrerpolicy", "no-referrer-when-downgrade");
+    frame.appendChild(iframe);
+    frame.classList.add("is-loaded");
+
+    // Кнопка была нужна, пока карта грузилась по нажатию. Теперь она лишняя.
+    var button = frame.querySelector("[data-map-open]");
+    if (button) button.remove();
   }
 
   function initAll() {
