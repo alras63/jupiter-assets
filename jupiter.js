@@ -22,6 +22,48 @@
   var root = document.documentElement;
 
   /* ---------------------------------------------------------------
+     Значок вкладки
+     ---------------------------------------------------------------
+     Портал отдаёт свой /favicon.ico, и во вкладке стояла синяя «24».
+     Настройка значка есть в интерфейсе портала, но не в REST, а блок
+     «свой код в <head>» здесь не годится: проверка безопасности портала
+     ломает там тег link — сохранённое возвращается как «<li nk …>».
+     Поэтому ставим ссылку скриптом.
+
+     Адрес значков берём из адреса самого файла: он лежит на том же CDN, в
+     соседней папке images. Так адрес не надо нигде прописывать — при каждой
+     выкладке статики он новый, потому что привязан к коммиту. */
+  function assetsBase() {
+    var self = document.currentScript;
+    var src = self && self.src;
+    if (!src) {
+      // currentScript пуст, если файл подключён иначе. Ищем по имени.
+      var all = document.querySelectorAll('script[src*="/jupiter.js"]');
+      src = all.length ? all[all.length - 1].src : "";
+    }
+    return src ? src.replace(/\/[^/]*$/, "") : "";
+  }
+
+  function setIcons() {
+    var base = assetsBase();
+    var head = document.head;
+    if (!base || !head) return;
+    // Чужие значки убираем: иначе браузер вправе оставить битриксовый.
+    var was = head.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]');
+    for (var i = 0; i < was.length; i++) was[i].parentNode.removeChild(was[i]);
+    [
+      { rel: "icon", type: "image/svg+xml", href: base + "/images/favicon.svg" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: base + "/images/favicon-32.png" },
+      { rel: "apple-touch-icon", href: base + "/images/favicon.png" },
+    ].forEach(function (icon) {
+      var link = document.createElement("link");
+      for (var key in icon) if (Object.prototype.hasOwnProperty.call(icon, key)) link.setAttribute(key, icon[key]);
+      head.appendChild(link);
+    });
+  }
+  setIcons();
+
+  /* ---------------------------------------------------------------
      Тема
      --------------------------------------------------------------- */
   function applyTheme(theme) {
