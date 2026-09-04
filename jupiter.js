@@ -643,10 +643,14 @@
     return text(card, SOURCES.name).split(/\s+/)[0] || "";
   }
 
-  /** Модель — всё, что после марки: «Nissan Qashqai II» → «Qashqai II». */
+  /**
+   * Модель — первое слово после марки: «Nissan Qashqai II» → «Qashqai».
+   * Не весь хвост: у одной модели бывает несколько комплектаций, и «CX-5
+   * Comfort» с «CX-5 Smart» стали бы в фильтре разными моделями.
+   */
   function model(card) {
     var parts = text(card, SOURCES.name).split(/\s+/);
-    return parts.slice(1).join(" ") || parts[0] || "";
+    return parts[1] || parts[0] || "";
   }
 
   /** «от 2 500 000 ₽» → 2500000. Неразрывные пробелы тоже считаются. */
