@@ -689,6 +689,7 @@
 [class*="block-repo-"] .filter-bar select{ border: 0; border-bottom: 1px solid var(--ja-line); border-radius: 0; padding: 8px 0; background: transparent; }
 [class*="block-repo-"] .filter-bar select:focus{ border-color: var(--ja-orange); box-shadow: none; }
 [class*="block-repo-"] .filter-bar .button{ align-self: end; }
+[class*="block-repo-"] .filter-bar select option,[class*="block-repo-"] .quick-search select option,[class*="block-repo-"] .catalog-toolbar select option{ background-color: var(--ja-surface); color: var(--ja-ink); }
 [class*="block-repo-"] .catalog-layout{ display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: var(--ja-gap); align-items: start; }
 [class*="block-repo-"] .catalog-sidebar{ position: sticky; top: 90px; border: 1px solid var(--ja-line); border-radius: var(--ja-radius); padding: 24px; background: var(--ja-surface); }
 [class*="block-repo-"] .sidebar__head{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }

@@ -638,19 +638,35 @@
     return node ? node.textContent.trim() : "";
   }
 
-  /** Марка — первое слово названия: «Nissan Qashqai II» → «Nissan». */
+  /**
+   * Марка.
+   *
+   * Единственное, что берётся не из видимого текста, — и на то есть причина:
+   * по названию марку не отделить. «Lynk & Co 900», «BYD Yuan Up», «Mazda Zhi
+   * Shang Pro» — граница между маркой и моделью в них не на первом пробеле и
+   * не на последнем. В фильтре из-за этого стояли «&», «Auto» и «Up».
+   *
+   * Атрибут заполняет сборка из карточки товара в магазине, руками его не
+   * набирают. Карточка, добавленная в редакторе вручную, атрибута не имеет —
+   * там маркой считается первое слово, как и раньше.
+   */
   function brand(card) {
-    return text(card, SOURCES.name).split(/\s+/)[0] || "";
+    var given = (card.getAttribute("data-brand") || "").trim();
+    return given || text(card, SOURCES.name).split(/\s+/)[0] || "";
   }
 
   /**
-   * Модель — первое слово после марки: «Nissan Qashqai II» → «Qashqai».
-   * Не весь хвост: у одной модели бывает несколько комплектаций, и «CX-5
-   * Comfort» с «CX-5 Smart» стали бы в фильтре разными моделями.
+   * Модель — остаток названия после марки: «Nissan Qashqai» → «Qashqai»,
+   * «BYD Yuan Up» → «Yuan Up».
+   *
+   * Комплектации в названии нет, она стоит отдельной строкой в карточке,
+   * поэтому «CX-5 Comfort» и «CX-5 Smart» и так приходят одной моделью.
    */
   function model(card) {
-    var parts = text(card, SOURCES.name).split(/\s+/);
-    return parts[1] || parts[0] || "";
+    var name = text(card, SOURCES.name);
+    var mark = brand(card);
+    var rest = name.slice(0, mark.length) === mark ? name.slice(mark.length) : name.replace(/^\S+/, "");
+    return rest.trim() || name;
   }
 
   /** «от 2 500 000 ₽» → 2500000. Неразрывные пробелы тоже считаются. */
