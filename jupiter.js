@@ -484,6 +484,13 @@
  *
  * Первый вариант считается пустым («Любая марка») и в ссылку не попадает.
  *
+ * Пункт записывается одним из трёх способов:
+ *   Nissan                     — подпись и значение совпадают;
+ *   До 3 000 000 ₽ = 3000000   — подпись видит посетитель, значение уходит
+ *                                в адрес (фильтр каталога ждёт число);
+ *   Qashqai II @ Nissan        — пункт показывается только тогда, когда в
+ *                                поле из data-after выбран «Nissan».
+ *
  * Обёртка — div, а не form: санитайзер Битрикса вырезает тег form из CONTENT
  * блока (проверено через landing.repo.checkcontent). Отправка и так шла не
  * через submit, а сборкой адреса на клике по кнопке.
@@ -491,47 +498,78 @@
 (function () {
   "use strict";
 
-  function initField(field) {
+  /** «Qashqai II @ Nissan» → { label, value, parent }. */
+  function parseOption(raw) {
+    var at = raw.lastIndexOf("@");
+    var parent = at === -1 ? "" : raw.slice(at + 1).trim();
+    var head = (at === -1 ? raw : raw.slice(0, at)).trim();
+    var parts = head.split("=");
+    var label = parts[0].trim();
+    var value = parts.length > 1 ? parts.slice(1).join("=").trim() : label;
+    return { label: label, value: value, parent: parent };
+  }
+
+  function initField(form, field) {
     var select = field.querySelector("select");
-    if (!select) return;
+    if (!select) return null;
 
     var raw = field.getAttribute("data-options") || "";
-    var options = raw.split(",").map(function (item) { return item.trim(); }).filter(Boolean);
+    var options = raw.split(",").map(function (item) { return item.trim(); }).filter(Boolean).map(parseOption);
     var param = field.getAttribute("data-param") || "";
+    // Поле, от которого зависит список: указывается через data-param родителя.
+    var after = (field.getAttribute("data-after") || "").trim();
+    var parentSelect = after
+      ? form.querySelector('.landing-block-card-field[data-param="' + after + '"] select')
+      : null;
 
     select.name = param;
-    select.innerHTML = "";
-    options.forEach(function (item, index) {
-      /* Пункт можно записать как «Подпись = значение»: подпись видит
-         посетитель, значение уходит в адрес. Нужно бюджету — фильтр каталога
-         ждёт число, а показывать надо «До 3 000 000 ₽». */
-      var parts = item.split("=");
-      var label = parts[0].trim();
-      var value = parts.length > 1 ? parts.slice(1).join("=").trim() : label;
 
-      var option = document.createElement("option");
-      // Первый пункт — «любой», он не должен уходить в запрос.
-      option.value = index === 0 ? "" : value;
-      option.textContent = label;
-      select.appendChild(option);
-    });
+    function render() {
+      var was = select.value;
+      var chosen = parentSelect ? parentSelect.value : "";
+      select.innerHTML = "";
+      options.forEach(function (item, index) {
+        // Первый пункт — «любой», он остаётся всегда и в запрос не уходит.
+        if (index && item.parent && chosen && item.parent !== chosen) return;
+        var option = document.createElement("option");
+        option.value = index === 0 ? "" : item.value;
+        option.textContent = item.label;
+        select.appendChild(option);
+      });
+      select.value = "";
+      for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === was) { select.value = was; break; }
+      }
+      // Список без единственного варианта бесполезен — прячем.
+      field.hidden = select.options.length < 2;
+    }
+
+    render();
+    if (parentSelect) parentSelect.addEventListener("change", render);
 
     // Возвращаем выбор из адреса: со страницы каталога можно вернуться назад,
     // и строка поиска должна показывать то же, что и фильтр.
     var params = new URLSearchParams(location.search);
     if (param && params.has(param)) {
       var wanted = params.get(param);
-      for (var i = 0; i < select.options.length; i++) {
-        if (select.options[i].value === wanted) { select.value = wanted; break; }
+      for (var k = 0; k < select.options.length; k++) {
+        if (select.options[k].value === wanted) { select.value = wanted; break; }
       }
     }
+    return render;
   }
 
   function initForm(form) {
     if (form.dataset.quickSearchReady === "1") return;
     form.dataset.quickSearchReady = "1";
 
-    form.querySelectorAll(".landing-block-card-field").forEach(initField);
+    /* Родительское поле должно быть готово раньше зависимого, поэтому сначала
+       поля без data-after, потом остальные. */
+    var fields = Array.prototype.slice.call(form.querySelectorAll(".landing-block-card-field"));
+    fields.sort(function (a, b) {
+      return (a.getAttribute("data-after") ? 1 : 0) - (b.getAttribute("data-after") ? 1 : 0);
+    });
+    fields.forEach(function (field) { initField(form, field); });
 
     var submit = form.querySelector(".landing-block-node-submit");
     if (!submit) return;
@@ -579,6 +617,10 @@
  * Фильтр объявляет только источник (data-source) — выбирается из списка,
  * так что ошибиться нельзя. Варианты фильтра собираются из значений,
  * которые реально есть в карточках, и обновляются сами.
+ *
+ * Фильтр может зависеть от другого: data-after="brand" означает, что варианты
+ * собираются не из всех карточек, а только из тех, что прошли фильтр по марке.
+ * Так «Модель» не предлагает Qashqai, когда выбрана Mazda.
  */
 (function () {
   "use strict";
@@ -591,24 +633,26 @@
     "spec-three": ".landing-block-node-spec-three",
   };
 
+  function text(card, selector) {
+    var node = card.querySelector(selector);
+    return node ? node.textContent.trim() : "";
+  }
+
   /** Марка — первое слово названия: «Nissan Qashqai II» → «Nissan». */
   function brand(card) {
     return text(card, SOURCES.name).split(/\s+/)[0] || "";
   }
 
-  function text(card, selector) {
-    var node = card.querySelector(selector);
-    return node ? node.textContent.trim() : "";
+  /** Модель — всё, что после марки: «Nissan Qashqai II» → «Qashqai II». */
+  function model(card) {
+    var parts = text(card, SOURCES.name).split(/\s+/);
+    return parts.slice(1).join(" ") || parts[0] || "";
   }
 
   /** «от 2 500 000 ₽» → 2500000. Неразрывные пробелы тоже считаются. */
   function price(card) {
     var raw = text(card, ".landing-block-node-price").replace(/[^\d]/g, "");
     return raw ? parseInt(raw, 10) : 0;
-  }
-
-  function money(value) {
-    return value.toLocaleString("ru-RU") + " ₽";
   }
 
   function plural(n) {
@@ -619,19 +663,42 @@
     return "автомобилей";
   }
 
-  /** Пороги бюджета считаем от реальных цен: 4 ступени, округление вверх до 500 тыс. */
-  function priceSteps(cards) {
+  /**
+   * Диапазоны бюджета: «2–3 млн ₽», …, последний открытый — «от 6 млн ₽».
+   *
+   * Шаг подбирается так, чтобы вариантов вышло не больше пяти: на четырёх
+   * машинах это шаг в миллион, на полном каталоге — в три. Пустые диапазоны
+   * не показываем: выбор, который заведомо ничего не находит, только мешает.
+   *
+   * Тот же расчёт повторён в bitrix/testpages.mjs для строки быстрого поиска
+   * на главной — она собирает адрес с этими же значениями.
+   */
+  function priceRanges(cards) {
     var values = cards.map(price).filter(Boolean);
     if (!values.length) return [];
-    var max = Math.max.apply(null, values);
-    var min = Math.min.apply(null, values);
-    var step = 500000;
-    var steps = [];
-    for (var i = 1; i <= 4; i++) {
-      var edge = Math.ceil((min + ((max - min) * i) / 4) / step) * step;
-      if (steps.indexOf(edge) === -1) steps.push(edge);
+
+    var M = 1000000;
+    var min = Math.floor(Math.min.apply(null, values) / M);
+    var max = Math.max.apply(null, values) / M;
+    var steps = [1, 2, 3, 5, 10, 20, 50];
+    var step = steps[steps.length - 1];
+    for (var i = 0; i < steps.length; i++) {
+      if ((max - min) / steps[i] <= 5) { step = steps[i]; break; }
     }
-    return steps;
+
+    var has = function (from, to) {
+      return values.some(function (value) { return value >= from && (!to || value < to); });
+    };
+
+    var out = [];
+    for (var k = 0; k < 4; k++) {
+      var from = (min + k * step) * M;
+      var to = from + step * M;
+      if (has(from, to)) out.push({ from: from, to: to, label: (from / M) + "–" + (to / M) + " млн ₽" });
+    }
+    var open = (min + 4 * step) * M;
+    if (has(open, 0)) out.push({ from: open, to: 0, label: "от " + (open / M) + " млн ₽" });
+    return out;
   }
 
   function initCatalog(root) {
@@ -652,59 +719,98 @@
     var cards = Array.prototype.slice.call(grid.querySelectorAll(".vehicle-card"));
     cards.forEach(function (card, index) { card.dataset.order = String(index); });
 
-    var steps = priceSteps(cards);
+    var ranges = priceRanges(cards);
 
-    filters.forEach(function (field) {
+    /** Чем читается значение карточки для этого источника. */
+    function reader(source) {
+      if (source === "brand") return brand;
+      if (source === "model") return model;
+      if (SOURCES[source]) return function (card) { return text(card, SOURCES[source]); };
+      return null;
+    }
+
+    /** Проходит ли карточка один фильтр. Пустой выбор пропускает всё. */
+    function passes(card, field) {
+      var select = field.querySelector("select");
+      if (!select || !select.value) return true;
+      var source = field.getAttribute("data-source") || "";
+
+      if (source === "price") {
+        var edge = select.value.split("-");
+        var from = parseInt(edge[0], 10) || 0;
+        var to = edge[1] ? parseInt(edge[1], 10) : 0;
+        var value = price(card);
+        return value >= from && (!to || value < to);
+      }
+
+      var read = reader(source);
+      return read ? read(card) === select.value : true;
+    }
+
+    /** Карточки, из которых собираются варианты этого фильтра. */
+    function poolFor(field) {
+      var after = (field.getAttribute("data-after") || "").split(",")
+        .map(function (name) { return name.trim(); })
+        .filter(Boolean);
+      if (!after.length) return cards;
+      var parents = filters.filter(function (other) {
+        return after.indexOf(other.getAttribute("data-source") || "") !== -1;
+      });
+      return cards.filter(function (card) {
+        return parents.every(function (other) { return passes(card, other); });
+      });
+    }
+
+    /** Пересобирает список вариантов, сохраняя выбор, если он ещё возможен. */
+    function fill(field) {
       var select = field.querySelector("select");
       if (!select) return;
       var source = field.getAttribute("data-source") || "";
-      var anyLabel = field.getAttribute("data-any") || "Любой";
+      var was = select.value;
+
+      var list;
+      if (source === "price") {
+        list = ranges.map(function (range) {
+          return { value: range.from + "-" + (range.to || ""), label: range.label };
+        });
+      } else {
+        var read = reader(source);
+        var seen = [];
+        if (read) {
+          poolFor(field).forEach(function (card) {
+            var value = read(card);
+            if (value && seen.indexOf(value) === -1) seen.push(value);
+          });
+          seen.sort(function (a, b) { return a.localeCompare(b, "ru"); });
+        }
+        list = seen.map(function (value) { return { value: value, label: value }; });
+      }
 
       select.innerHTML = "";
       var blank = document.createElement("option");
       blank.value = "";
-      blank.textContent = anyLabel;
+      blank.textContent = field.getAttribute("data-any") || "Любой";
       select.appendChild(blank);
+      list.forEach(function (item) {
+        var option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        select.appendChild(option);
+      });
 
-      if (source === "price") {
-        steps.forEach(function (edge) {
-          var option = document.createElement("option");
-          option.value = String(edge);
-          option.textContent = "До " + money(edge);
-          select.appendChild(option);
-        });
-      } else if (source === "brand") {
-        var brands = [];
-        cards.forEach(function (card) {
-          var value = brand(card);
-          if (value && brands.indexOf(value) === -1) brands.push(value);
-        });
-        brands.sort(function (a, b) { return a.localeCompare(b, "ru"); });
-        brands.forEach(function (value) {
-          var option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          select.appendChild(option);
-        });
-      } else if (SOURCES[source]) {
-        // Варианты — только те, что реально встречаются в карточках.
-        var seen = [];
-        cards.forEach(function (card) {
-          var value = text(card, SOURCES[source]);
-          if (value && seen.indexOf(value) === -1) seen.push(value);
-        });
-        seen.sort(function (a, b) { return a.localeCompare(b, "ru"); });
-        seen.forEach(function (value) {
-          var option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          select.appendChild(option);
-        });
+      select.value = "";
+      for (var i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === was) { select.value = was; break; }
       }
 
       // Фильтр без единственного варианта бесполезен — прячем.
       field.hidden = select.options.length < 2;
-      select.addEventListener("change", apply);
+    }
+
+    filters.forEach(function (field) {
+      fill(field);
+      var select = field.querySelector("select");
+      if (select) select.addEventListener("change", refresh);
     });
 
     if (sortSelect) sortSelect.addEventListener("change", apply);
@@ -715,21 +821,28 @@
           if (select) select.value = "";
         });
         if (sortSelect) sortSelect.value = "popular";
-        apply();
+        refresh();
         if (window.Jupiter && window.Jupiter.toast) {
           window.Jupiter.toast({ title: "Фильтры сброшены", text: "Показаны все автомобили." });
         }
       });
     }
 
-
     /* Выбор фильтров живёт в адресе страницы.
        Так он переживает перезагрузку и «назад» из карточки товара, и так же
        приезжает из строки быстрого поиска на главной: она собирает тот же
-       адрес. Ключ — источник фильтра (brand, type, price), а не порядковый
+       адрес. Ключ — источник фильтра (brand, model, price), а не порядковый
        номер: менеджер может переставить фильтры местами. */
     restoreFromUrl();
-    apply();
+    refresh();
+
+    /** Зависимые списки пересобираем на каждое изменение, потом фильтруем. */
+    function refresh() {
+      filters.forEach(function (field) {
+        if (field.getAttribute("data-after")) fill(field);
+      });
+      apply();
+    }
 
     function restoreFromUrl() {
       var params = new URLSearchParams(location.search);
@@ -768,16 +881,9 @@
       // запись в историю, и кнопка «назад» перестаёт работать по-человечески.
       history.replaceState(null, "", location.pathname + (query ? "?" + query : "") + location.hash);
     }
+
     function matches(card) {
-      return filters.every(function (field) {
-        var select = field.querySelector("select");
-        if (!select || !select.value) return true;
-        var source = field.getAttribute("data-source");
-        if (source === "price") return price(card) <= parseInt(select.value, 10);
-        if (source === "brand") return brand(card) === select.value;
-        if (!SOURCES[source]) return true;
-        return text(card, SOURCES[source]) === select.value;
-      });
+      return filters.every(function (field) { return passes(card, field); });
     }
 
     function apply() {
@@ -895,6 +1001,10 @@
  *
  * Показываем не только платёж, но и сумму кредита с переплатой: без них
  * человек видит красивое число в месяц и не видит, во что оно обходится.
+ *
+ * Ставка считается от ключевой ставки Банка России (data-key-rate) плюс
+ * надбавка банка (data-rate-add). Так её видно и посетителю, и редактору:
+ * зашитое «16% годовых» ничем не объяснялось и устаревало молча.
  */
 (function () {
   "use strict";
@@ -932,10 +1042,16 @@
     var monthlyTitle = root.querySelector("[data-calc-monthly-title]");
     var bodyOut = root.querySelector("[data-calc-body]");
     var overOut = root.querySelector("[data-calc-over]");
+    var rateOut = root.querySelector("[data-calc-rate]");
 
     var priceMin = num(root, "data-price-min", 1000000);
     var priceMax = num(root, "data-price-max", 6000000);
-    var rate = num(root, "data-rate", 16) / 100;
+    /* Старые блоки на странице могли остаться с data-rate — тогда берём его. */
+    var keyRate = num(root, "data-key-rate", NaN);
+    var ratePercent = isNaN(keyRate)
+      ? num(root, "data-rate", 16)
+      : keyRate + num(root, "data-rate-add", 0);
+    var rate = ratePercent / 100;
     var downMin = num(root, "data-down-min", 10);
     var downMax = num(root, "data-down-max", 90);
 
@@ -988,6 +1104,7 @@
       if (monthlyTitle) monthlyTitle.textContent = money(monthly);
       if (bodyOut) bodyOut.textContent = money(body);
       if (overOut) overOut.textContent = money(Math.max(monthly * months - body, 0));
+      if (rateOut) rateOut.textContent = String(Math.round(ratePercent * 100) / 100).replace(".", ",") + "% годовых";
 
       [priceInput, downInput, termInput].forEach(paintTrack);
     }
