@@ -621,6 +621,23 @@
   font: 500 12px/1.2 Inter, Arial, sans-serif !important;
   letter-spacing: .01em;
 }
+
+/* Поле с текстом: подпись уезжает вверх, и значению нужно место под ней.
+   Свои отступы мы задавали одинаковыми на все состояния и с !important, так
+   что прибавку виджета перебивали, — «+7» в телефоне налезал на слово
+   «Телефон». Телефон это заметно всегда: значение там стоит с самого начала.
+
+   Сумма отступов и строки сходится с высотой пустого поля, поэтому поля в
+   ряду не прыгают, когда в одно из них начинают печатать. */
+.b24-form-control-container .b24-form-control:focus,
+.b24-form-control-container .b24-form-control-not-empty,
+.bitrix24forms input.b24-form-control:focus,
+.bitrix24forms input.b24-form-control-not-empty,
+.bitrix24forms textarea.b24-form-control:focus,
+.bitrix24forms textarea.b24-form-control-not-empty {
+  padding-top: 23px !important;
+  padding-bottom: 5px !important;
+}
 .b24-form-control-desc { color: var(--ja-faint) !important; font-size: 12px !important; }
 
 /* Кнопка — как наша .button */
@@ -669,10 +686,12 @@
 .b24-form-error,
 .b24-form-control-alert-message { color: #c8452b !important; font-size: 12px !important; }
 
-/* Отметка «Заряжено Битрикс24» — оставляем, но приглушаем: убирать её нельзя,
-   это чужой продукт и его знак. */
-.b24-form-sign { opacity: .5; transform: scale(.92); transform-origin: left bottom; }
-.b24-form-sign:hover { opacity: .8; }
+/* Отметка «Заряжено Битрикс24» под формой — по решению владельца сайта скрыта.
+   Правильное место для этого — настройка самой формы в портале («Показывать
+   копирайт Битрикс24», доступна на платных тарифах): тогда знак исчезает и в
+   других местах, где форма показывается, и не зависит от нашего CSS. Здесь
+   правило на случай, пока настройка не переключена. */
+.b24-form-sign { display: none !important; }
 
 /* Отступы блока */
 [class*="block-33-"] > .landing-block,
