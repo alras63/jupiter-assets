@@ -669,7 +669,6 @@
 
   var SOURCES = {
     name: ".landing-block-node-name",
-    meta: ".landing-block-node-meta",
     "spec-one": ".landing-block-node-spec-one",
     "spec-two": ".landing-block-node-spec-two",
     "spec-three": ".landing-block-node-spec-three",
