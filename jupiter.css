@@ -547,6 +547,7 @@
 }
 [class*="block-repo-"] .product-card__spec > span:first-child{ color: var(--ja-faint); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 [class*="block-repo-"] .product-card__spec > span + span{ color: var(--ja-ink); font-size: 14px; }
+[class*="block-repo-"] .product-card__spec:last-child:nth-child(odd){ grid-column: 1 / -1; }
 [class*="block-repo-"] .product-card__actions{ display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; }
 [class*="block-repo-"] .product-card__note{ margin: 16px 0 0; color: var(--ja-faint); font-size: 12px; }
 @media (max-width: 900px){[class*="block-repo-"] .product-card{ grid-template-columns: 1fr; }
@@ -575,7 +576,9 @@
 [class*="block-repo-"] .quick-search select:focus{ border-color: var(--ja-orange); box-shadow: none; }
 [class*="block-repo-"] .showcase{ display: grid; grid-template-columns: 1.05fr 1fr; gap: var(--ja-gap); }
 [class*="block-repo-"] .showcase__side{ display: grid; gap: var(--ja-gap); }
-[class*="block-repo-"] .showcase__feature .vehicle-card__media{ aspect-ratio: 4 / 3; }
+[class*="block-repo-"] .showcase__feature .vehicle-card__media{ aspect-ratio: 4 / 3; flex: 1; min-height: 0; }
+[class*="block-repo-"] .showcase__feature .vehicle-card__media img{ height: 100%; object-fit: cover; }
+[class*="block-repo-"] .showcase__feature .vehicle-card__body{ flex: 0 0 auto; }
 [class*="block-repo-"] .vehicle-card--row{ flex-direction: row; }
 [class*="block-repo-"] .vehicle-card--row .vehicle-card__media{ flex: 0 0 46%; aspect-ratio: auto; }
 [class*="block-repo-"] .vehicle-card--row .vehicle-card__body{ justify-content: center; padding: 22px; }
@@ -1012,6 +1015,7 @@
 [class*="block-repo-"] .hero__copy > p{ margin: 0 0 18px; font-size: 15px; line-height: 1.5; }
 [class*="block-repo-"] .hero__actions{ gap: 10px; margin-top: 18px; }
 [class*="block-repo-"] .hero__actions .button{ width: 100%; }
+[class*="block-repo-"] .hero__actions .text-link{ justify-content: center; width: 100%; padding: 10px 0; }
 [class*="block-repo-"] .hero__proof{ gap: 9px; margin-top: 16px; }
 [class*="block-repo-"] .hero__proof > span{ font-size: 12.5px; }
 [class*="block-repo-"] .hero__media{ min-height: 0; height: 170px; }
