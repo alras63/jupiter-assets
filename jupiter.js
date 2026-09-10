@@ -1166,6 +1166,8 @@
       if (monthlyTitle) monthlyTitle.textContent = money(monthly);
       if (bodyOut) bodyOut.textContent = money(body);
       if (overOut) overOut.textContent = money(Math.max(monthly * months - body, 0));
+      /* Пишем только в сам <b>: звёздочка — соседний элемент, и textContent
+         по всей строке стёр бы её вместе со ссылкой на условия. */
       if (rateOut) rateOut.textContent = String(Math.round(ratePercent * 100) / 100).replace(".", ",") + "% годовых";
 
       [priceInput, downInput, termInput].forEach(paintTrack);
