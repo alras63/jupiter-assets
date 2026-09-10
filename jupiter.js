@@ -1116,10 +1116,18 @@
     var downMin = num(root, "data-down-min", 10);
     var downMax = num(root, "data-down-max", 90);
 
-    priceInput.min = priceMin;
+    /* Шаг ползунка отсчитывается от минимума, а не от нуля. На странице
+       автомобиля стартовое значение — цена этой машины, и при минимуме,
+       не попадающем с ней на одну сетку, браузер округлял её до ближайшего
+       шага: под ценой 3 590 000 ₽ калькулятор показывал 3 600 000 ₽.
+       Сдвигаем минимум так, чтобы цена легла точно на шаг. */
+    var priceStart = num(root, "data-price-start", 2500000);
+    var priceStep = 50000;
+    var priceShift = (priceStart - priceMin) % priceStep;
+    priceInput.min = priceMin + priceShift - (priceShift ? priceStep : 0);
     priceInput.max = priceMax;
-    priceInput.step = 50000;
-    priceInput.value = num(root, "data-price-start", 2500000);
+    priceInput.step = priceStep;
+    priceInput.value = priceStart;
 
     /* Ползунок взноса ходит в процентах, а рубли считаются от цены.
        Раньше он ходил в рублях, и его максимум приходилось двигать вслед за
