@@ -286,6 +286,13 @@
 [class*="block-repo-"] .check-list{ display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 [class*="block-repo-"] .check-list li{ display: flex; align-items: flex-start; gap: 10px; color: var(--ja-ink-soft); font-size: 13px; }
 [class*="block-repo-"] .check-list :is(svg,[class*="block-repo-"] img[class*="icon"]){ flex: 0 0 auto; margin-top: 2px; color: var(--ja-orange); }
+[class*="block-repo-"] .check-list li:not(:has(svg)):not(:has(img))::before{
+  content: "✓";
+  flex: 0 0 auto;
+  color: var(--ja-orange);
+  font-size: 12px;
+  line-height: 1.5;
+}
 [class*="block-repo-"] .site-header{
   position: sticky;
   z-index: 50;
