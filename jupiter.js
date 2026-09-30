@@ -1,6 +1,37 @@
 /* Юпитер Авто — интерактив блоков. Действует только по нашим селекторам.
    Генерируется: node bitrix/build-portal-js.mjs — руками не править. */
 
+/* ==== calltouch.js ==== */
+/**
+ * CallTouch — коллтрекинг и подмена номеров. Идентификатор ft879qij.
+ *
+ * Почему файлом, а не «кодом в HEAD»: поле HEADBLOCK_CODE в Битрикс24.Сайты
+ * пропускает содержимое через фильтр, который разбивает `<script` пробелом.
+ * На портал и на страницу уходит `<sc ript>`, браузер такой тег не исполняет,
+ * а landing.site.update при этом отвечает «успешно» — счётчик Метрики так
+ * простоял мёртвым (подробности в bitrix/README.md). Скрипты доезжают до
+ * страницы только ассетами блоков, поэтому код едет в общем jupiter.js.
+ *
+ * Следствие: CallTouch работает там, где есть хоть один наш блок. Страницы
+ * оформления и оплаты заказа собраны на штатных блоках магазина, наших там
+ * нет — туда код ставится отдельно, через интерфейс портала.
+ *
+ * Код заказчика перенесён дословно, добавлена только защита от повторной
+ * установки: файл подключается ассетом нескольких блоков, а если счётчик
+ * поставят ещё и в HEAD, инициализация случится дважды и визит задвоится.
+ */
+(function (w, d) {
+  "use strict";
+
+  if (w.CalltouchDataObject) return;
+  for (var s = d.getElementsByTagName("script"), j = 0; j < s.length; j += 1) {
+    if (s[j].src && s[j].src.indexOf("mod.calltouch.ru") !== -1) return;
+  }
+
+  (function(w,d,n,c){w.CalltouchDataObject=n;w[n]=function(){w[n]["callbacks"].push(arguments)};if(!w[n]["callbacks"]){w[n]["callbacks"]=[]}w[n]["loaded"]=false;if(typeof c!=="object"){c=[c]}w[n]["counters"]=c;for(var i=0;i<c.length;i+=1){p(c[i])}function p(cId){var a=d.getElementsByTagName("script")[0],s=d.createElement("script"),i=function(){a.parentNode.insertBefore(s,a)},m=typeof Array.prototype.find === 'function',n=m?"init-min.js":"init.js";s.async=true;s.src="https://mod.calltouch.ru/"+n+"?id="+cId;if(w.opera=="[object Opera]"){d.addEventListener("DOMContentLoaded",i,false)}else{i()}}})(window,document,"ct","ft879qij");
+})(window, document);
+
+
 /* ==== jupiter.js ==== */
 /**
  * Общий JS сайта «Юпитер Авто» для Битрикс24.Сайты.
