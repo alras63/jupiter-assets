@@ -120,6 +120,12 @@
      всё равно отобьёт по лимиту — лучше не создавать такую заявку вовсе. */
   var sent = {};
 
+  /* Вызов ровно четырьмя аргументами, как в простом примере документации.
+     Полная подпись — createRequest(routeKey, phone, fields, requestCallback,
+     scheduleTime, tags, unitId, customFields), но хвост нам не нужен:
+     звонок сразу, тегов нет, отдел один. Раньше хвост передавался явно
+     (null, [], undefined, []), и `undefined` в unitId — лишний риск
+     получить validation_error на пустом месте. */
   function createRequest(payload) {
     window.ctw.createRequest(
       ROUTE_KEY,
@@ -147,11 +153,7 @@
           default:
             log("ошибка CallTouch", data);
         }
-      },
-      null,
-      [],
-      undefined,
-      []
+      }
     );
   }
 
@@ -168,6 +170,43 @@
     }
     window.setTimeout(function () { whenReady(callback, spent + WAIT_STEP_MS); }, WAIT_STEP_MS);
   }
+
+  /* Диагностика из консоли браузера. Нужна потому, что «не работает»
+     со стороны CallTouch и со стороны сайта выглядят одинаково: заявка
+     просто не появляется в журнале. Эти две команды показывают ответ
+     сервера дословно, без отправки формы и без создания лида в CRM.
+
+       JUPITER_CT.check()                  — есть ли виджет под нашим ключом
+       JUPITER_CT.check("другой_ключ")     — то же для чужого ключа
+       JUPITER_CT.send("+79261234567")     — создать настоящую заявку
+
+     JUPITER_CT.send создаёт РЕАЛЬНУЮ заявку: CallTouch позвонит на
+     указанный номер. Проверять только на своём телефоне. */
+  window.JUPITER_CT = {
+    routeKey: ROUTE_KEY,
+    check: function (key) {
+      var k = key || ROUTE_KEY;
+      if (!window.ctw || typeof window.ctw.getRouteKeyData !== "function") {
+        log("скрипт CallTouch ещё не загрузился");
+        return;
+      }
+      window.ctw.getRouteKeyData(k, function (success, data) {
+        if (!success) { log("ошибка запроса настроек виджета " + k, data); return; }
+        if (!data.widgetFound) {
+          log("виджета по ключу " + k + " нет: либо он не создан и не включён, либо не активна услуга обратного звонка");
+          return;
+        }
+        log("виджет " + k + " найден, режим контакт-центра: " + (data.widgetData && data.widgetData.callCenterWorkingMode), data.widgetData);
+      });
+    },
+    send: function (phone, fields) {
+      var normal = normalisePhone(phone);
+      if (!normal) { log("номер " + phone + " не приводится к виду 7XXXXXXXXXX"); return; }
+      whenReady(function () {
+        createRequest({ phone: normal, fields: fields || [{ type: "text", name: "Проверка", value: "ручной вызов из консоли" }] });
+      });
+    },
+  };
 
   window.addEventListener("b24:form:send:success", function (event) {
     var form = event && event.detail && event.detail.object;
