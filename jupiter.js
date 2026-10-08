@@ -32,6 +32,184 @@
 })(window, document);
 
 
+/* ==== calltouch-forms.js ==== */
+/**
+ * Передача заявок с CRM-форм Битрикс24 в CallTouch — JavaScript Callback API.
+ *
+ * Выбран браузерный вариант, а не серверный: серверному нужен обработчик на
+ * нашей стороне с Access-Token и SiteId, а Битрикс24.Сайты своего бэкенда не
+ * даёт. Браузерный сам подставляет `sessionId` CallTouch, поэтому источник
+ * заявки склеивается с визитом без дополнительной передачи метки.
+ * Документация: https://www.calltouch.ru/support/javascript-callback-api/
+ *
+ * Что делает этот метод: создаёт заявку на обратный звонок. CallTouch сам
+ * звонит клиенту и соединяет его с контакт-центром, а заявка попадает в
+ * журнал звонков. Это не «тихая» передача лида — без баланса минут,
+ * включённой услуги обратного звонка и виджета «Автопрозвон заявок с сайта»
+ * заявки будут отбиваться с `request_widget_not_found`.
+ *
+ * Лид в CRM при этом создаёт сама форма Битрикса — мы её не подменяем и в
+ * отправку не вмешиваемся: подписываемся на событие уже состоявшейся
+ * успешной отправки. Если CallTouch ответит ошибкой, на заявку в CRM это
+ * никак не влияет.
+ *
+ * Как подписываемся: форма Битрикса объявляет пространство событий
+ * `b24:form` и на каждое своё событие делает `window.dispatchEvent` с
+ * `CustomEvent("b24:form:<тип>", { detail: { object, type, data } })`.
+ * Нужный тип — `send:success`. Значения полей лежат в
+ * `object.pager.pages[].fields[].items[].value`, тип поля — в `field.type`
+ * (`name`, `phone`, `email`, остальное считаем текстом). Проверено на
+ * боевой форме 2026-10-08.
+ */
+(function (window, document) {
+  "use strict";
+
+  /* Ключ виджета «Автопрозвон заявок с сайта» из кабинета CallTouch. Должен
+     совпадать с полем routeKey в настройках виджета — иначе CallTouch
+     ответит request_widget_not_found. Для разных форм можно завести разные
+     виджеты: тогда ключ задаётся на странице через window.JUPITER_CT_ROUTE_KEY
+     до загрузки этого файла. */
+  var ROUTE_KEY = window.JUPITER_CT_ROUTE_KEY || "jupiter_site_form";
+
+  /* Сколько ждём появления window.ctw: скрипт CallTouch грузится асинхронно,
+     а форму могут отправить в первые секунды после открытия страницы. */
+  var WAIT_MS = 20000;
+  var WAIT_STEP_MS = 250;
+
+  /* Сколько дополнительных полей отдаём. Описание createRequest говорит «не
+     более 5»; берём по нижней границе, чтобы заявка не отбилась валидацией. */
+  var FIELDS_LIMIT = 5;
+
+  var log = function (message, data) {
+    if (window.console && console.log) console.log("[CallTouch] " + message, data === undefined ? "" : data);
+  };
+
+  /** Телефон в виде 7XXXXXXXXXX: CallTouch принимает 11 цифр без плюса. */
+  function normalisePhone(raw) {
+    var digits = String(raw || "").replace(/\D/g, "");
+    if (digits.length === 11 && digits.charAt(0) === "8") digits = "7" + digits.slice(1);
+    if (digits.length === 10) digits = "7" + digits;
+    return /^7\d{10}$/.test(digits) ? digits : null;
+  }
+
+  /** Все поля формы одним списком: страниц у формы может быть несколько. */
+  function formFields(form) {
+    var pages = (form && form.pager && form.pager.pages) || [];
+    var out = [];
+    for (var i = 0; i < pages.length; i += 1) {
+      var fields = pages[i].fields || [];
+      for (var j = 0; j < fields.length; j += 1) out.push(fields[j]);
+    }
+    return out;
+  }
+
+  /** Значение поля: у каждого поля массив items, значение в items[].value. */
+  function fieldValue(field) {
+    var items = (field && field.items) || [];
+    for (var i = 0; i < items.length; i += 1) {
+      var value = items[i] && items[i].value;
+      if (value !== undefined && value !== null && String(value).trim() !== "" && String(value).trim() !== "+7") {
+        return String(value).trim();
+      }
+    }
+    return "";
+  }
+
+  /* Что уже отправили: событие прилетает от каждой формы на странице, а на
+     некоторых их несколько. Один и тот же номер дважды в минуту CallTouch
+     всё равно отобьёт по лимиту — лучше не создавать такую заявку вовсе. */
+  var sent = {};
+
+  function createRequest(payload) {
+    window.ctw.createRequest(
+      ROUTE_KEY,
+      payload.phone,
+      payload.fields,
+      function (success, data) {
+        if (success) {
+          log("заявка создана, идентификатор " + data.callbackRequestId);
+          return;
+        }
+        switch (data && data.type) {
+          case "request_throttle_timeout":
+          case "request_throttle_count":
+            log("лимит заявок, CallTouch заявку не принял");
+            break;
+          case "request_phone_blacklisted":
+            log("номер в чёрном списке CallTouch");
+            break;
+          case "request_widget_not_found":
+            log("не найден виджет «Автопрозвон заявок с сайта» по ключу " + ROUTE_KEY);
+            break;
+          case "validation_error":
+            log("CallTouch забраковал данные заявки", data.details);
+            break;
+          default:
+            log("ошибка CallTouch", data);
+        }
+      },
+      null,
+      [],
+      undefined,
+      []
+    );
+  }
+
+  /** Ждём скрипт CallTouch: без window.ctw создавать заявку нечем. */
+  function whenReady(callback, waited) {
+    if (window.ctw && typeof window.ctw.createRequest === "function") {
+      callback();
+      return;
+    }
+    var spent = waited || 0;
+    if (spent >= WAIT_MS) {
+      log("скрипт CallTouch не загрузился за " + WAIT_MS / 1000 + " с, заявка не передана");
+      return;
+    }
+    window.setTimeout(function () { whenReady(callback, spent + WAIT_STEP_MS); }, WAIT_STEP_MS);
+  }
+
+  window.addEventListener("b24:form:send:success", function (event) {
+    var form = event && event.detail && event.detail.object;
+    if (!form) return;
+
+    var fields = formFields(form);
+    var phone = null;
+    var name = "";
+    var email = "";
+    var extras = [];
+
+    for (var i = 0; i < fields.length; i += 1) {
+      var field = fields[i];
+      var value = fieldValue(field);
+      if (!value) continue;
+      if (field.type === "phone" && !phone) { phone = normalisePhone(value); continue; }
+      if (field.type === "name" && !name) { name = value; continue; }
+      if (field.type === "email" && !email) { email = value; continue; }
+      extras.push({ type: "text", name: String(field.label || field.name || "Поле").slice(0, 255), value: value.slice(0, 255) });
+    }
+
+    if (!phone) {
+      log("в заявке нет номера в формате 7XXXXXXXXXX — в CallTouch не передаём");
+      return;
+    }
+    if (sent[phone]) return;
+    sent[phone] = true;
+
+    var payload = { phone: phone, fields: [] };
+    if (name) payload.fields.push({ type: "name", name: "Имя", value: name.slice(0, 150) });
+    if (email) payload.fields.push({ type: "email", name: "Почта", value: email.slice(0, 255) });
+    payload.fields = payload.fields.concat(extras);
+    /* Страница — последней: когда полей много, лимит обрежет именно её, а не
+       имя и почту, по которым менеджер узнаёт клиента. */
+    payload.fields.push({ type: "text", name: "Страница", value: String(document.title || location.pathname).slice(0, 255) });
+    payload.fields = payload.fields.slice(0, FIELDS_LIMIT);
+
+    whenReady(function () { createRequest(payload); });
+  });
+})(window, document);
+
+
 /* ==== jupiter.js ==== */
 /**
  * Общий JS сайта «Юпитер Авто» для Битрикс24.Сайты.
