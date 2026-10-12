@@ -453,6 +453,44 @@
   }
 
   /* ---------------------------------------------------------------
+     Цели Яндекс.Метрики
+     ---------------------------------------------------------------
+     Номер счётчика не зашиваем: он уже стоит на странице штатной
+     настройкой сайта, и вторая копия номера разъехалась бы с ней при
+     смене счётчика. Берём из самой Метрики — ym.a хранит очередь вызовов
+     ещё до загрузки tag.js, а после загрузки номер лежит в ym.counters.
+
+     Цель отправляется по атрибуту data-goal на любом элементе. Клик
+     ловим на document: баннер приходит из блока, а блок на странице
+     может появиться позже этого скрипта. */
+  function counterId() {
+    var ym = window.ym;
+    if (!ym) return null;
+    if (ym.counters) { for (var id in ym.counters) if (ym.counters.hasOwnProperty(id)) return id; }
+    var queue = ym.a || [];
+    for (var i = 0; i < queue.length; i += 1) {
+      if (queue[i] && queue[i][1] === "init" && queue[i][0]) return queue[i][0];
+    }
+    return null;
+  }
+
+  function reachGoal(name) {
+    var id = counterId();
+    if (!id || typeof window.ym !== "function") return false;
+    try { window.ym(id, "reachGoal", name); } catch (e) { return false; }
+    return true;
+  }
+
+  function initGoals() {
+    document.addEventListener("click", function (event) {
+      var target = event.target.closest("[data-goal]");
+      if (!target) return;
+      var name = target.getAttribute("data-goal");
+      if (name) reachGoal(name);
+    });
+  }
+
+  /* ---------------------------------------------------------------
      Старт
      --------------------------------------------------------------- */
   /** Есть ли на странице наша разметка. На портале общий JS подключается
@@ -471,6 +509,7 @@
     syncCookieBar();
     markActiveNav();
     initReveal();
+    initGoals();
 
     // Баннер появляется не сразу и исчезает после согласия — следим за телом.
     if (window.MutationObserver) {

@@ -749,6 +749,18 @@
 [class*="block-repo-"] .cta-banner__icon{ color: var(--ja-orange); }
 [class*="block-repo-"] .cta-banner h2{ margin-bottom: 8px; }
 [class*="block-repo-"] .cta-banner p{ max-width: 520px; margin-bottom: 0; }
+[class*="block-repo-"] .promo-banner{
+  display: block;
+  overflow: hidden;
+  border-radius: var(--ja-radius);
+  line-height: 0;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+[class*="block-repo-"] .promo-banner__image{ display: block; width: 100%; height: auto; }
+[class*="block-repo-"] .promo-banner:hover{ transform: translateY(-2px); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22); }
+[class*="block-repo-"] .promo-banner:focus-visible{ outline: 2px solid var(--ja-orange); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce){[class*="block-repo-"] .promo-banner{ transition: none; }
+[class*="block-repo-"] .promo-banner:hover{ transform: none; }}
 [class*="block-repo-"] .calc-bar{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 22px; align-items: end; }
 [class*="block-repo-"] .process{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
 [class*="block-repo-"] .process__step{ position: relative; }
