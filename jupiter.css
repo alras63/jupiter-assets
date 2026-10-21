@@ -432,7 +432,7 @@
   
   padding-bottom: var(--ja-controls-gap);
 }
-[class*="block-repo-"] .hero-slider__controls .icon-button{ background: var(--ja-surface); }
+[class*="block-repo-"] .hero-slider__controls .icon-button{ flex: 0 0 auto; background: var(--ja-surface); }
 [class*="block-repo-"] .hero-slider__dots{
   display: flex;
   align-items: center;
