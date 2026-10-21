@@ -178,7 +178,7 @@
 [class*="block-repo-"] h1 em,[class*="block-repo-"] h2 em,[class*="block-repo-"] .display em{ color: var(--ja-orange); font-style: normal; }
 [class*="block-repo-"] p{ margin-bottom: 14px; color: var(--ja-muted); font-size: 14px; }
 [class*="block-repo-"] p:last-child{ margin-bottom: 0; }
-[class*="block-repo-"] .container{ width: min(calc(100% - 48px), var(--ja-container)); margin-inline: auto; }
+[class*="block-repo-"] .container{ width: min(calc(100% - 48px), var(--ja-container)); margin-inline: auto; padding-inline: 0; }
 [class*="block-repo-"] .narrow{ max-width: 920px; }
 [class*="block-repo-"] .stack{ display: grid; gap: var(--ja-gap); padding: var(--ja-gap) 0 40px; }
 [class*="block-repo-"] .stack > *,[class*="block-repo-"] .showcase > *,[class*="block-repo-"] .home-bottom > *,[class*="block-repo-"] .info-panels > *,[class*="block-repo-"] .catalog-layout > *,[class*="block-repo-"] .config-grid > *,[class*="block-repo-"] .vehicle-grid > *{ min-width: 0; }
@@ -189,7 +189,7 @@
   padding: 34px 38px;
   background: var(--ja-surface);
 }
-[class*="block-repo-"] .panel--flush{ padding: 0; overflow: hidden; }
+[class*="block-repo-"] .panel.panel--flush{ padding: 0; overflow: hidden; }
 [class*="block-repo-"] .panel--soft{ background: var(--ja-surface-soft); }
 [class*="block-repo-"] .panel--accent{ position: relative; overflow: hidden; border-color: var(--ja-line); background: var(--ja-surface-inset); }
 [class*="block-repo-"] .panel--accent::before{ content: ""; position: absolute; top: 0; right: 0; left: 0; height: 3px; background: var(--ja-gradient); }
@@ -384,6 +384,8 @@
 [class*="block-repo-"] .hero--slider{
   display: grid;
   
+  grid-template-columns: minmax(0, 1fr);
+  
   --ja-controls-h: 40px;
   --ja-controls-gap: 70px;
 }
@@ -396,8 +398,8 @@
   justify-content: center;
   padding-bottom: calc(var(--ja-controls-gap) + var(--ja-controls-h) + 18px);
 }
-[class*="block-repo-"] .hero-slider__track{ grid-area: 1 / 1; display: grid; }
-[class*="block-repo-"] .hero-slide{ grid-area: 1 / 1; opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+[class*="block-repo-"] .hero-slider__track{ grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr); }
+[class*="block-repo-"] .hero-slide{ grid-area: 1 / 1; min-width: 0; opacity: 0; transition: opacity .5s ease; pointer-events: none; }
 [class*="block-repo-"] .hero-slide.is-active{ opacity: 1; pointer-events: auto; }
 [class*="block-repo-"] .hero-slide__brand{
   display: inline-block;
@@ -426,6 +428,8 @@
   align-items: center;
   gap: 14px;
   
+  min-width: 0;
+  
   padding-bottom: var(--ja-controls-gap);
 }
 [class*="block-repo-"] .hero-slider__controls .icon-button{ background: var(--ja-surface); }
@@ -433,6 +437,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 0 1 auto;
   border: 1px solid var(--ja-line);
   border-radius: 999px;
   padding: 13px 14px;
@@ -440,7 +446,9 @@
 }
 [class*="block-repo-"] .hero-slider__dots button{
   position: relative;
+  flex: 0 1 42px;
   width: 42px;
+  min-width: 10px;
   height: 4px;
   overflow: hidden;
   border: 0;
@@ -1025,6 +1033,7 @@
 [class*="block-repo-"] .footer__brand{ grid-column: 1 / -1; }}
 @media (max-width: 560px){[class*="block-repo-"]{ font-size: 14px;}
 [class*="block-repo-"] .panel{ padding: 22px 18px; }
+[class*="block-repo-"] .button{ padding-inline: 18px; white-space: normal; text-align: center; }
 [class*="block-repo-"] .header__actions{ margin-left: auto; gap: 8px; }
 [class*="block-repo-"] .logo__mark{ width: 34px; }
 [class*="block-repo-"] .hero__copy{ padding: 22px 0 18px; }
@@ -1039,6 +1048,7 @@
 [class*="block-repo-"] .hero__proof > span{ font-size: 12.5px; }
 [class*="block-repo-"] .hero__media{ min-height: 0; height: 170px; }
 [class*="block-repo-"] .hero-slider__controls{ padding-block: 10px; }
+[class*="block-repo-"] .hero-slider__dots{ gap: 6px; padding: 12px 11px; }
 [class*="block-repo-"] .jupiter-map{ grid-template-columns: 1fr; }
 [class*="block-repo-"] .map__frame,[class*="block-repo-"] .map__frame iframe{ min-height: 260px; }
 [class*="block-repo-"] .quick-search,[class*="block-repo-"] .calc-bar{ grid-template-columns: 1fr; }
